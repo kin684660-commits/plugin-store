@@ -489,7 +489,7 @@ fn check_community_component_restrictions(plugin: &PluginYaml, diags: &mut Vec<L
 }
 
 fn check_components(plugin: &PluginYaml, dir: &Path, diags: &mut Vec<LintDiag>) {
-    let has_any = plugin.components.skill.is_some()
+    let has_any = plugin.components.has_skill()
         || plugin.components.mcp.is_some()
         || plugin.components.binary.is_some();
 
@@ -497,13 +497,25 @@ fn check_components(plugin: &PluginYaml, dir: &Path, diags: &mut Vec<LintDiag>) 
         diags.push(LintDiag {
             level: DiagLevel::Error,
             code: "E050",
-            message: "at least one component (skill, mcp, or binary) must be declared"
+            message: "at least one component (skill/skills, mcp, or binary) must be declared"
                 .to_string(),
         });
     }
 
-    // ── Skill component ──────────────────────────────────────────
-    if let Some(ref skill) = plugin.components.skill {
+    // Cannot use both `skill` (singular) and `skills` (plural) at the same time
+    if plugin.components.skill.is_some() && !plugin.components.skills.is_empty() {
+        diags.push(LintDiag {
+            level: DiagLevel::Error,
+            code: "E053",
+            message: "use either `skill` (singular) or `skills` (plural), not both. \
+                     Prefer `skills` for multiple skills."
+                .to_string(),
+        });
+    }
+
+    // ── Validate each declared skill ─────────────────────────────
+    let all_skills = plugin.components.all_skills();
+    for skill in &all_skills {
         if let Some(ref skill_dir) = skill.dir {
             let skill_dir_path = dir.join(skill_dir);
             if !skill_dir_path.exists() {
@@ -531,7 +543,7 @@ fn check_components(plugin: &PluginYaml, dir: &Path, diags: &mut Vec<LintDiag>) 
                 level: DiagLevel::Warning,
                 code: "W051",
                 message:
-                    "skill component has no dir, path, or repo — auto-discover will be used"
+                    "skill entry has no dir, path, or repo"
                         .to_string(),
             });
         }
@@ -647,14 +659,19 @@ fn check_file_sizes(dir: &Path, diags: &mut Vec<LintDiag>) {
 }
 
 fn check_skill_md(plugin: &PluginYaml, dir: &Path, diags: &mut Vec<LintDiag>) {
-    let skill_md_path = find_skill_md(plugin, dir);
+    let skill_paths = find_all_skill_mds(plugin, dir);
 
-    let path = match skill_md_path {
-        Some(p) if p.exists() => p,
-        _ => return, // Already reported in check_components
-    };
+    if skill_paths.is_empty() {
+        return; // Already reported in check_components
+    }
 
-    let content = match std::fs::read_to_string(&path) {
+    for path in &skill_paths {
+        check_single_skill_md(path, plugin, diags);
+    }
+}
+
+fn check_single_skill_md(path: &Path, plugin: &PluginYaml, diags: &mut Vec<LintDiag>) {
+    let content = match std::fs::read_to_string(path) {
         Ok(c) => c,
         Err(_) => return,
     };
@@ -1027,7 +1044,7 @@ fn check_build_config(plugin: &PluginYaml, _dir: &Path, diags: &mut Vec<LintDiag
     };
 
     // Must have a Skill component — Skill is the entry point for everything
-    if plugin.components.skill.is_none() {
+    if !plugin.components.has_skill() {
         diags.push(LintDiag {
             level: DiagLevel::Error,
             code: "E120",
@@ -1140,22 +1157,34 @@ fn check_forbidden_binaries(dir: &Path, diags: &mut Vec<LintDiag>) {
     }
 }
 
-fn find_skill_md(plugin: &PluginYaml, dir: &Path) -> Option<PathBuf> {
-    if let Some(ref skill) = plugin.components.skill {
+/// Find all SKILL.md paths from explicitly declared skills.
+fn find_all_skill_mds(plugin: &PluginYaml, dir: &Path) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+
+    for skill in plugin.components.all_skills() {
         if let Some(ref skill_dir) = skill.dir {
-            return Some(dir.join(skill_dir).join("SKILL.md"));
+            let p = dir.join(skill_dir).join("SKILL.md");
+            if p.exists() {
+                paths.push(p);
+            }
         }
         if let Some(ref path) = skill.path {
-            return Some(dir.join(path));
+            let p = dir.join(path);
+            if p.exists() {
+                paths.push(p);
+            }
         }
     }
 
-    // Fallback: look for any SKILL.md in skills/<name>/
-    let default = dir.join("skills").join(&plugin.name).join("SKILL.md");
-    if default.exists() {
-        return Some(default);
+    // Fallback: if nothing declared, look for default location
+    if paths.is_empty() {
+        let default = dir.join("skills").join(&plugin.name).join("SKILL.md");
+        if default.exists() {
+            paths.push(default);
+        }
     }
-    None
+
+    paths
 }
 
 /// Recursively walk a directory and collect file paths (skips hidden dirs).

@@ -41,12 +41,36 @@ pub struct AuthorInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ComponentsDecl {
+    /// Single skill (backward compat). Use `skills` for multiple.
     #[serde(default)]
     pub skill: Option<SkillDecl>,
+    /// Multiple skills — each must have a dir containing SKILL.md.
+    /// Preferred over `skill` (singular) when plugin provides multiple skills.
+    #[serde(default)]
+    pub skills: Vec<SkillDecl>,
     #[serde(default)]
     pub mcp: Option<McpDecl>,
     #[serde(default)]
     pub binary: Option<BinaryDecl>,
+}
+
+impl ComponentsDecl {
+    /// Return all skill declarations (merging singular `skill` + plural `skills`).
+    pub fn all_skills(&self) -> Vec<&SkillDecl> {
+        let mut result: Vec<&SkillDecl> = self.skills.iter().collect();
+        if let Some(ref s) = self.skill {
+            // Only add singular if not already represented in plural
+            if result.is_empty() {
+                result.push(s);
+            }
+        }
+        result
+    }
+
+    /// Returns true if any skill is declared.
+    pub fn has_skill(&self) -> bool {
+        self.skill.is_some() || !self.skills.is_empty()
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
