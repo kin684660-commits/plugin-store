@@ -44,6 +44,7 @@ pub struct Components {
     pub skill: Option<SkillComponent>,
     pub mcp: Option<McpComponent>,
     pub binary: Option<BinaryComponent>,
+    pub python: Option<PythonComponent>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -103,6 +104,15 @@ pub struct BinaryComponent {
     /// GitHub Release tag to download from. When absent, falls back to `releases/latest`.
     #[serde(default)]
     pub release_tag: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PythonComponent {
+    pub source_repo: String,
+    pub source_commit: String,
+    #[serde(default)]
+    pub requires_python: Option<String>,
+    pub install_command: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

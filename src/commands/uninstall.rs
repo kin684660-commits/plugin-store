@@ -2,6 +2,7 @@ use anyhow::Result;
 use colored::Colorize;
 use plugin_store::agent::{get_adapter, AgentKind};
 use plugin_store::installer::mcp::McpInstaller;
+use plugin_store::installer::python::PythonInstaller;
 use plugin_store::state::StateManager;
 use plugin_store::utils::ui;
 
@@ -54,6 +55,12 @@ pub async fn execute(name: &str, agent_filter: Option<&str>) -> Result<()> {
                 // Legacy single-mcp fallback
                 McpInstaller::uninstall(&kind, mcp_key)?;
                 ui::print_success(&format!("MCP entry removed from {}", kind.name()));
+            }
+
+            // Remove Python package
+            if plugin.components_installed.contains(&"python".to_string()) {
+                PythonInstaller::uninstall(&plugin.name)?;
+                ui::print_success("Python package uninstalled");
             }
 
             if let Some(ref binary_path) = agent_record.binary_path {

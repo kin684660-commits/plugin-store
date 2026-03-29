@@ -36,6 +36,9 @@ pub async fn execute(name: &str) -> Result<()> {
             if p.components.binary.is_some() {
                 println!("  {} Binary", "✔".green());
             }
+            if let Some(ref py) = p.components.python {
+                println!("  {} Python ({})", "✔".green(), py.install_command);
+            }
 
             if let Some(ref defi) = p.extra {
                 println!("\n{}:", "DeFi Info".bold());

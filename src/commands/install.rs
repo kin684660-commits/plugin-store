@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use colored::Colorize;
 use plugin_store::agent::{detect_agents, get_adapter, AgentKind};
-use plugin_store::installer::{skill::SkillInstaller, mcp::McpInstaller, binary::BinaryInstaller};
+use plugin_store::installer::{skill::SkillInstaller, mcp::McpInstaller, binary::BinaryInstaller, python::PythonInstaller};
 use plugin_store::registry::RegistryManager;
 use plugin_store::state::StateManager;
 use plugin_store::state::models::{InstalledPlugin, InstalledAgent};
@@ -95,6 +95,13 @@ pub async fn execute(
                 println!("    export PATH=\"{}:$PATH\"", install_dir_path.display());
             }
             components.push("binary".to_string());
+        }
+
+        // Install Python package via pip/pipx
+        if let Some(ref py) = plugin.components.python {
+            PythonInstaller::install(&py.install_command, &plugin.name)?;
+            ui::print_success(&format!("Python package installed via: {}", py.install_command));
+            components.push("python".to_string());
         }
     }
 
