@@ -110,7 +110,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/eth-gas-tracker",
-          "commit": "80fd4be56d44c3ac72183c5bdd69fc263fc1c7a4"
+          "commit": "80b587ccde9c22bc4e17211ba256492668882416"
         }
       },
       "link": "https://github.com/okx/plugin-store-community",
@@ -134,7 +134,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/go-echo-cli",
-          "commit": "80fd4be56d44c3ac72183c5bdd69fc263fc1c7a4"
+          "commit": "80b587ccde9c22bc4e17211ba256492668882416"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -149,6 +149,76 @@
         "source_repo": "yz06276/go-echo-cli",
         "source_commit": "89f239a4b05f54068eae19df20787112bbc26010",
         "binary_name": "go-echo-cli"
+      }
+    },
+    {
+      "name": "node-echo-cli",
+      "version": "1.0.0",
+      "description": "A Node.js echo CLI with file stats, directory listing, environment info, and path utilities",
+      "author": {
+        "name": "yz06276"
+      },
+      "category": "utility",
+      "tags": [
+        "node",
+        "filesystem",
+        "cli"
+      ],
+      "type": "community-developer",
+      "components": {
+        "skill": {
+          "repo": "okx/plugin-store-community",
+          "dir": "skills/node-echo-cli",
+          "commit": "80b587ccde9c22bc4e17211ba256492668882416"
+        },
+        "binary": {
+          "repo": "okx/plugin-store",
+          "asset_pattern": "node-echo-cli-{target}",
+          "checksums_asset": "checksums.txt",
+          "release_tag": "community/node-echo-cli@1.0.0"
+        }
+      },
+      "link": "https://github.com/okx/plugin-store-community",
+      "build": {
+        "lang": "node",
+        "source_repo": "yz06276/node-echo-cli",
+        "source_commit": "8044e759ecf00b6c1d17003b94a622cf1aa90872",
+        "binary_name": "node-echo-cli"
+      }
+    },
+    {
+      "name": "python-echo-cli",
+      "version": "1.0.0",
+      "description": "A Python echo CLI with text analysis (word frequency, sentence split, character stats, Levenshtein distance)",
+      "author": {
+        "name": "yz06276"
+      },
+      "category": "utility",
+      "tags": [
+        "python",
+        "text-analysis",
+        "nlp"
+      ],
+      "type": "community-developer",
+      "components": {
+        "skill": {
+          "repo": "okx/plugin-store-community",
+          "dir": "skills/python-echo-cli",
+          "commit": "80b587ccde9c22bc4e17211ba256492668882416"
+        },
+        "python": {
+          "source_repo": "yz06276/python-echo-cli",
+          "source_commit": "73995b8fb627486c5eab24aa788a32b8ee014d28",
+          "requires_python": ">=3.10",
+          "install_command": "pip install git+https://github.com/yz06276/python-echo-cli@73995b8fb627486c5eab24aa788a32b8ee014d28"
+        }
+      },
+      "link": "https://github.com/okx/plugin-store-community",
+      "build": {
+        "lang": "python",
+        "source_repo": "yz06276/python-echo-cli",
+        "source_commit": "73995b8fb627486c5eab24aa788a32b8ee014d28",
+        "binary_name": "python-echo-cli"
       }
     },
     {
@@ -169,7 +239,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/rust-echo-cli",
-          "commit": "80fd4be56d44c3ac72183c5bdd69fc263fc1c7a4"
+          "commit": "80b587ccde9c22bc4e17211ba256492668882416"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -205,7 +275,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/signal-tracker",
-          "commit": "80fd4be56d44c3ac72183c5bdd69fc263fc1c7a4"
+          "commit": "80b587ccde9c22bc4e17211ba256492668882416"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -243,7 +313,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/sol-token-guard",
-          "commit": "80fd4be56d44c3ac72183c5bdd69fc263fc1c7a4"
+          "commit": "80b587ccde9c22bc4e17211ba256492668882416"
         }
       },
       "link": "https://github.com/okx/plugin-store-community",
@@ -267,7 +337,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/ts-echo-cli",
-          "commit": "80fd4be56d44c3ac72183c5bdd69fc263fc1c7a4"
+          "commit": "80b587ccde9c22bc4e17211ba256492668882416"
         },
         "binary": {
           "repo": "okx/plugin-store",
