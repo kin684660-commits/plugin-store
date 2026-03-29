@@ -1021,14 +1021,14 @@ fn check_build_config(plugin: &PluginYaml, _dir: &Path, diags: &mut Vec<LintDiag
         });
     }
 
-    // TypeScript and Python require a main entry point
-    if (build.lang == "typescript" || build.lang == "python") && build.main.is_none() {
+    // TypeScript, Node.js, and Python require a main entry point
+    if (build.lang == "typescript" || build.lang == "node" || build.lang == "python") && build.main.is_none() {
         diags.push(LintDiag {
             level: DiagLevel::Error,
             code: "E125",
             message: format!(
                 "build.main is required for lang '{}' — \
-                 specify the entry file (e.g. src/index.ts or src/main.py)",
+                 specify the entry file (e.g. src/index.ts, src/index.js, or src/main.py)",
                 build.lang
             ),
         });

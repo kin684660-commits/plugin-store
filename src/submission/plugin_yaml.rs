@@ -95,7 +95,7 @@ pub struct BinaryDecl {
 /// compiles, and publishes the artifact. We never store source code in our repo.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BuildConfig {
-    /// Programming language: rust, go, typescript, python
+    /// Programming language: rust, go, typescript, node, python
     pub lang: String,
     /// GitHub repo containing source code (e.g. "developer/my-tool")
     pub source_repo: String,
@@ -110,7 +110,7 @@ pub struct BuildConfig {
     /// Name of the compiled binary
     #[serde(default)]
     pub binary_name: Option<String>,
-    /// Entry point file for TypeScript/Python (e.g. src/index.ts, src/main.py)
+    /// Entry point file for TypeScript/Node.js/Python (e.g. src/index.ts, src/index.js, src/main.py)
     #[serde(default)]
     pub main: Option<String>,
     /// Target platforms to build for (optional, defaults to all supported)
@@ -149,14 +149,15 @@ pub const VALID_CATEGORIES: &[&str] = &[
     "nft",
 ];
 
-/// Valid build languages (binary compilation only, no MCP/npm distribution).
-pub const VALID_BUILD_LANGS: &[&str] = &["rust", "go", "typescript", "python"];
+/// Valid build languages (all compile to binary via our CI).
+pub const VALID_BUILD_LANGS: &[&str] = &["rust", "go", "typescript", "node", "python"];
 
 /// Expected entry files per language.
 pub const LANG_ENTRY_FILES: &[(&str, &str)] = &[
     ("rust", "Cargo.toml"),
     ("go", "go.mod"),
     ("typescript", "package.json"),
+    ("node", "package.json"),
     ("python", "pyproject.toml"),
 ];
 
