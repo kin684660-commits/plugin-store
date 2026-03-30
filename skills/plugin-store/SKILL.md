@@ -1,6 +1,6 @@
 ---
 name: plugin-store
-description: "This is the main on-chain DeFi skill. Use it for ALL of the following:\nStrategy discovery: 'how to make money on-chain', 'any profitable strategies', '链上有什么赚钱机会', '有什么盈利机会', '有什么套利机会', '怎么赚钱', '有什么好的策略', '帮我理财', '有什么收益机会', 'yield opportunities', 'how to earn', 'investment strategy', 'DeFi 策略推荐', '有什么自动化策略', 'automated strategies', 'passive income on-chain', '链上怎么赚币', '怎么玩链上', '怎么玩DeFi', '链上有什么玩法', '有什么赚钱项目', '推荐一些策略'.\nPlugin/project discovery: '插件商店有什么', '有什么插件', '有什么项目', '什么项目最火', '最热门的项目', '有哪些工具', '推荐一些项目', 'what plugins are available', 'show me plugins', 'what projects are hot', 'trending projects', 'plugin marketplace', '插件市场', '有什么好用的插件'.\nCapability discovery: '你能做什么', '你有什么能力', '你支持什么', '有什么技能', '都有什么功能', '支持哪些策略', '支持哪些 skill', 'what skills are available', 'what can you do', 'what strategies do you support', 'show me all strategies', 'list all skills'.\nDApp discovery: 'what dapps are available', 'any good dapps', '有什么好的dapp', '推荐一些dapp', 'recommend dapps', 'show me dapps', 'which protocols can I use', '有什么好的协议', '有什么DeFi协议', '推荐DeFi项目', '有什么链上应用'.\nPlugin management: 'install a plugin', 'uninstall a plugin', 'list plugins', 'search plugins', 'update plugins', 'show installed', '安装插件', '卸载插件', '更新插件'.\nAlso activates when the skill has just been installed and the user has not yet chosen a direction."
+description: "This is the main on-chain DeFi skill. Use it for ALL of the following:\nStrategy discovery: 'how to make money on-chain', 'any profitable strategies', '链上有什么赚钱机会', '有什么盈利机会', '有什么套利机会', '怎么赚钱', '有什么好的策略', '帮我理财', '有什么收益机会', 'yield opportunities', 'how to earn', 'investment strategy', 'DeFi 策略推荐', '有什么自动化策略', 'automated strategies', 'passive income on-chain', '链上怎么赚币', '怎么玩链上', '怎么玩DeFi', '链上有什么玩法', '有什么赚钱项目', '推荐一些策略'.\nPlugin/project discovery: '插件商店有什么', '有什么插件', '有什么项目', '什么项目最火', '最热门的项目', '有哪些工具', '推荐一些项目', 'what plugins are available', 'show me plugins', 'what projects are hot', 'trending projects', 'plugin marketplace', '插件市场', '有什么好用的插件'.\nCapability discovery: '你能做什么', '你有什么能力', '你支持什么', '有什么技能', '都有什么功能', '支持哪些策略', '支持哪些 skill', 'what skills are available', 'what can you do', 'what strategies do you support', 'show me all strategies', 'list all skills'.\nDApp discovery: 'what dapps are available', 'any good dapps', '有什么好的dapp', '推荐一些dapp', 'recommend dapps', 'show me dapps', 'which protocols can I use', '有什么好的协议', '有什么DeFi协议', '推荐DeFi项目', '有什么链上应用'.\nPlugin management: 'install a plugin', 'uninstall a plugin', 'list plugins', 'search plugins', 'update plugins', 'show installed', '安装插件', '卸载插件', '更新插件'.\nPlugin development: 'I want to create a plugin', 'how to submit a plugin', '我想开发一个插件', '怎么提交插件', '如何贡献', 'contribute a plugin', 'build a plugin', 'create a skill', '创建插件', '开发插件', 'hackathon', 'submit my project', '提交我的项目'.\nAlso activates when the skill has just been installed and the user has not yet chosen a direction."
 license: Apache-2.0
 metadata:
   author: okx
@@ -10,7 +10,7 @@ metadata:
 
 # Plugin Store
 
-A CLI marketplace for installing/uninstalling/updating Skills and MCP servers across Claude Code, Cursor, and OpenClaw.
+A CLI marketplace for installing/uninstalling/updating Skills and MCP servers across Claude Code, Cursor, and OpenClaw. Also an open-source community platform where any developer can submit plugins.
 
 ## Pre-flight Checks
 
@@ -22,8 +22,8 @@ Run once per session before the first `plugin-store` command. Do not echo routin
 plugin-store --version 2>/dev/null || ~/.local/bin/plugin-store --version 2>/dev/null || ~/.cargo/bin/plugin-store --version 2>/dev/null
 ```
 
-- If the reported version is **≥ `0.1.18`** (this skill's `metadata.version`): binary is current, skip to step 2.
-- If the binary is **missing or older than `0.1.15`**: run the installer.
+- If the reported version is **≥ `0.3.0`** (this skill's `metadata.version`): binary is current, skip to step 2.
+- If the binary is **missing or older**: run the installer.
 
 **macOS / Linux:**
 ```bash
@@ -39,7 +39,7 @@ irm https://raw.githubusercontent.com/okx/plugin-store/main/skills/plugin-store/
 
 ### 2. Check for skill version drift
 
-Run `plugin-store --version`. If the CLI version is **newer** than this skill's `metadata.version` (`0.1.18`), display a one-time notice:
+Run `plugin-store --version`. If the CLI version is **newer** than this skill's `metadata.version` (`0.3.0`), display a one-time notice:
 
 > The plugin-store CLI has been updated. Consider reinstalling this skill to get the latest capabilities.
 
@@ -87,6 +87,8 @@ Parse the output and present it to the user as a clean table (name, category, do
 | "Update all" / "更新插件" | Run `plugin-store update --all` |
 | "Show installed" / "已安装" | Run `plugin-store installed` |
 | "Search X" / "搜索 X" | Run `plugin-store search <keyword>` |
+| "I want to create/submit a plugin" / "我想开发插件" | Guide through the Developer Workflow below |
+| "How to contribute" / "怎么提交插件" / "hackathon" | Guide through the Developer Workflow below |
 
 ---
 
@@ -94,23 +96,28 @@ Parse the output and present it to the user as a clean table (name, category, do
 
 > **CLI Reference**: For full parameter tables, output fields, and error cases, see [cli-reference.md](references/cli-reference.md).
 
+### User Commands
+
 | # | Command | Description |
 |---|---------|-------------|
 | 1 | `plugin-store list` | List all available plugins in the registry |
 | 2 | `plugin-store search <keyword>` | Search plugins by name, tag, or description |
 | 3 | `plugin-store info <name>` | Show detailed plugin info (components, chains, protocols) |
 | 4 | `plugin-store install <name>` | Install a plugin (interactive agent selection) |
-| 5 | `plugin-store install <name> --agent claude-code` | Install to a specific agent only |
-| 5a | `plugin-store install <name> --yes` | Install non-interactively (auto-detects agents, skips community confirmation) |
+| 5 | `plugin-store install <name> --yes` | Install non-interactively (auto-detects agents) |
 | 6 | `plugin-store install <name> --skill-only` | Install skill component only |
-| 7 | `plugin-store install <name> --mcp-only` | Install MCP component only |
-| 8 | `plugin-store uninstall <name>` | Uninstall a plugin from all agents |
-| 9 | `plugin-store uninstall <name> --agent claude-code` | Uninstall from a specific agent only |
-| 10 | `plugin-store update <name>` | Update a specific plugin |
-| 11 | `plugin-store update --all` | Update all installed plugins |
-| 12 | `plugin-store installed` | Show all installed plugins and their status |
-| 13 | `plugin-store registry update` | Force refresh registry cache |
-| 14 | `plugin-store self-update` | Update plugin-store CLI itself to latest version |
+| 7 | `plugin-store uninstall <name>` | Uninstall a plugin from all agents |
+| 8 | `plugin-store update --all` | Update all installed plugins |
+| 9 | `plugin-store installed` | Show all installed plugins and their status |
+| 10 | `plugin-store registry update` | Force refresh registry cache |
+| 11 | `plugin-store self-update` | Update plugin-store CLI itself to latest version |
+
+### Developer Commands
+
+| # | Command | Description |
+|---|---------|-------------|
+| 12 | `plugin-store init <name>` | Scaffold a new plugin (creates plugin.yaml, SKILL.md, LICENSE, etc.) |
+| 13 | `plugin-store lint <path>` | Validate a plugin before submission (30+ checks) |
 
 ---
 
@@ -144,6 +151,159 @@ Parse the output and present it to the user as a clean table (name, category, do
 
 ---
 
+## Developer Workflow: Create and Submit a Plugin
+
+Plugin Store is an open-source community platform. Any developer can submit a plugin through a Pull Request. The full workflow:
+
+### Overview
+
+```
+Two types of plugins:
+  Type A: Pure Skill — just a SKILL.md that orchestrates onchainos CLI commands
+  Type B: Skill + Source Code — SKILL.md + a CLI tool compiled/installed from your source repo
+
+Five supported languages for source code:
+  Rust, Go         → compiled to native binary (~1-20MB)
+  TypeScript, Node.js → distributed via npm install (~KB)
+  Python           → distributed via pip install (~KB)
+```
+
+### Step 1: Fork and scaffold
+
+```bash
+# Fork https://github.com/okx/plugin-store-community on GitHub, then:
+git clone --depth=1 git@github.com:YOUR_USERNAME/plugin-store-community.git
+cd plugin-store-community
+plugin-store init <your-plugin-name>
+```
+
+This creates `submissions/<your-plugin-name>/` with a complete template:
+
+```
+submissions/<your-plugin-name>/
+├── plugin.yaml           # Plugin manifest (fill in your details)
+├── skills/<name>/
+│   └── SKILL.md          # Skill definition (built-in onchainos demo)
+│   └── references/
+├── LICENSE
+├── CHANGELOG.md
+└── README.md
+```
+
+### Step 2: Edit plugin.yaml
+
+**Pure Skill** — just fill in the basics:
+
+```yaml
+schema_version: 1
+name: <your-plugin-name>          # lowercase + hyphens, 2-40 chars
+version: "1.0.0"
+description: "What your plugin does"
+author:
+  name: "Your Name"
+  github: "your-github-username"  # must match PR submitter
+license: MIT
+category: utility                 # trading-strategy | defi-protocol | analytics | utility | security | wallet | nft
+tags: [keyword1, keyword2]
+
+components:
+  skill:
+    dir: skills/<your-plugin-name>
+
+api_calls: []                     # external API domains your plugin calls
+```
+
+**Skill + Source Code** — add a `build` section pointing to your source repo:
+
+```yaml
+# ... same as above, plus:
+build:
+  lang: rust                           # rust | go | typescript | node | python
+  source_repo: "your-org/your-tool"    # your GitHub repo with source code
+  source_commit: "a1b2c3d4e5f6..."     # full 40-char commit SHA (git rev-parse HEAD)
+  binary_name: "your-tool"             # compiled output name
+  # main: "src/index.js"              # required for typescript/node/python
+```
+
+**How to get the commit SHA:**
+
+```bash
+cd your-source-repo
+git push origin main
+git rev-parse HEAD     # copy this 40-char string into build.source_commit
+```
+
+### Step 3: Write SKILL.md
+
+SKILL.md teaches the AI agent how to use your plugin. Required sections:
+
+1. **YAML frontmatter** — name, description, version, author, tags
+2. **Overview** — what the plugin does (2-3 sentences)
+3. **Pre-flight Checks** — what needs to be installed before use
+4. **Commands** — specific onchainos commands with When to use / Output
+5. **Error Handling** — table of common errors and resolutions
+6. **Skill Routing** — when to defer to other skills
+
+**Critical rule:** All on-chain write operations (signing, broadcasting, swaps, contract calls) MUST use onchainos CLI. Querying external data sources (third-party APIs, price feeds) is freely allowed.
+
+### Step 4: Validate locally
+
+```bash
+plugin-store lint ./submissions/<your-plugin-name>/
+```
+
+Fix all errors (❌), then re-run until you see ✓. Warnings (⚠️) are advisory.
+
+### Step 5: Submit via Pull Request
+
+```bash
+git checkout -b submit/<your-plugin-name>
+git add submissions/<your-plugin-name>/
+git commit -m "[new-plugin] <your-plugin-name> v1.0.0"
+git push origin submit/<your-plugin-name>
+```
+
+Then create a PR from your fork to `okx/plugin-store-community`. Each PR must contain exactly one plugin.
+
+### What happens after submission
+
+```
+Phase 2: Structure check (~30s) — bot validates plugin.yaml + SKILL.md
+Phase 3: AI code review (~2min) — Claude reads your code, writes a 9-section report
+Phase 4: Build check (if binary) — compiles your source code on 3 platforms
+Phase 7: After merge — auto-publishes to registry, users can install immediately
+```
+
+Human review takes 1-3 days. Once merged, your plugin is live:
+
+```bash
+plugin-store install <your-plugin-name>
+```
+
+### Source code requirements by language
+
+| Language | Key requirements |
+|----------|-----------------|
+| **Rust** | `Cargo.toml` with `[[bin]]` matching `binary_name` |
+| **Go** | `go.mod` with module declaration, `func main()` |
+| **TypeScript** | `package.json` with `"bin"` field, entry file has `#!/usr/bin/env node`, must be JS (not .ts) |
+| **Node.js** | `package.json` with `"bin"` field, entry file has `#!/usr/bin/env node` |
+| **Python** | `pyproject.toml` with `[build-system]` + `[project.scripts]`, recommend also `setup.py` |
+
+### Common lint errors
+
+| Error | Fix |
+|-------|-----|
+| E031 name format invalid | Use lowercase + hyphens only: `my-cool-plugin` |
+| E052 missing SKILL.md | Put SKILL.md in the path specified by `components.skill.dir` |
+| E110/E111 binary needs build | Add `build` section with `lang`, `source_repo`, `source_commit` |
+| E122 source_repo format | Use `owner/repo`, not full URL |
+| E123 commit SHA invalid | Must be full 40-char hex from `git rev-parse HEAD` |
+
+Full guide: https://github.com/okx/plugin-store-community/blob/main/PLUGIN_DEVELOPMENT_GUIDE.md
+
+---
+
 ## Supported Agents
 
 | Agent | Detection | Skills Path | MCP Config |
@@ -172,6 +332,7 @@ Parse the output and present it to the user as a clean table (name, category, do
 | `plugin-store: command not found` after install | Try `~/.local/bin/plugin-store` or `~/.cargo/bin/plugin-store` directly; PATH may not be updated for the current session |
 | Command returns non-zero exit | Report error verbatim; suggest `plugin-store self-update` |
 | Registry cache stale / corrupt | Run `plugin-store registry update` to force refresh |
+| `plugin-store lint` fails | Show error codes and fixes; refer to the lint error table above |
 
 ---
 
@@ -198,14 +359,19 @@ curl -sSL https://raw.githubusercontent.com/okx/plugin-store/main/skills/plugin-
   - Present capabilities in user-friendly language: "You can trade on Uniswap across 12 chains", not "uniswap-ai supports uniswap-v2, uniswap-v3 protocols"
   - After any action, suggest 2–3 natural follow-up steps
   - Support both English and Chinese — respond in the user's language
+  - For developer workflow: always run `plugin-store init` first, then guide through editing, linting, and PR submission
+  - For lint errors: show the error code, explain the fix, and offer to help edit the file
 </must>
 <should>
   - For community-source plugins, proactively warn the user before installing
   - After installing a plugin, read the installed SKILL.md and trigger the skill's onboarding flow immediately
+  - When guiding plugin development, ask which type (Pure Skill or Skill + Binary) and which language
+  - Suggest running `plugin-store lint` after every edit to catch issues early
 </should>
 <never>
   - Never expose internal skill names, registry URLs, file paths, or MCP config keys to the user
   - Never auto-reinstall on command failures — report the error and suggest `plugin-store self-update`
   - Never hardcode a plugin list — always fetch from `plugin-store list`
+  - Never skip the lint step before suggesting PR submission
 </never>
 </rules>
