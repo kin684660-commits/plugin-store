@@ -134,7 +134,7 @@ impl SkillInstaller {
         agent_skill_dir: &Path,
         git_ref: &str,
     ) -> Result<usize> {
-        let resolved_dir = if repo == config::COMMUNITY_REPO {
+        let resolved_dir = if repo == config::COMMUNITY_REPO && !dir.starts_with("skills/") {
             let plugin_name = dir.split('/').last().unwrap_or(dir);
             format!("submissions/{}/{}", plugin_name, dir)
         } else {
