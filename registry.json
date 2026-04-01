@@ -122,6 +122,29 @@
       "link": "https://github.com/Polymarket/agent-skills"
     },
     {
+      "name": "meme-trench-scanner",
+      "version": "1.0.0",
+      "description": "Meme Trench Scanner v1.0 — Solana Meme automated trading bot with 11 Launchpad coverage, 7-layer exit system, TraderSoul AI observation",
+      "author": {
+        "name": "yz06276"
+      },
+      "category": "trading-strategy",
+      "tags": [
+        "solana",
+        "onchainos",
+        "trading-bot"
+      ],
+      "type": "community-developer",
+      "components": {
+        "skill": {
+          "repo": "okx/plugin-store-community",
+          "dir": "skills/meme-trench-scanner",
+          "commit": "d1249b8893974c961e8eb404a37abdd96ee996fa"
+        }
+      },
+      "link": "https://github.com/okx/plugin-store-community"
+    },
+    {
       "name": "okx-buildx-hackathon-agent-track",
       "version": "1.0.0",
       "description": "AI Hackathon participation guide — registration, wallet setup, project building, submission to Moltbook, voting, and scoring. Apr 1-15, 2026. $14,000 USDT in prizes.",
@@ -141,7 +164,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/okx-buildx-hackathon-agent-track",
-          "commit": "dd967504a3934ee3eea6d66ddf0b4a7b017ed7fa"
+          "commit": "d1249b8893974c961e8eb404a37abdd96ee996fa"
         }
       },
       "link": "https://github.com/okx/plugin-store-community",
@@ -165,7 +188,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/smart-money-signal-copy-trade",
-          "commit": "dd967504a3934ee3eea6d66ddf0b4a7b017ed7fa"
+          "commit": "d1249b8893974c961e8eb404a37abdd96ee996fa"
         }
       },
       "link": "https://github.com/okx/plugin-store-community"
@@ -188,7 +211,7 @@
         "skill": {
           "repo": "okx/plugin-store-community",
           "dir": "skills/top-rank-tokens-sniper",
-          "commit": "dd967504a3934ee3eea6d66ddf0b4a7b017ed7fa"
+          "commit": "d1249b8893974c961e8eb404a37abdd96ee996fa"
         }
       },
       "link": "https://github.com/okx/plugin-store-community"
