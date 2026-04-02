@@ -142,7 +142,8 @@
           "commit": "171f4adf33a2667fd8ff5f6fcabe8b83c6f2b0d1"
         }
       },
-      "link": "https://github.com/okx/plugin-store-community"
+      "link": "https://github.com/okx/plugin-store-community",
+      "alias": "Meme Trench Scanner - Meme 扫链"
     },
     {
       "name": "okx-buildx-hackathon-agent-track",
@@ -191,7 +192,8 @@
           "commit": "171f4adf33a2667fd8ff5f6fcabe8b83c6f2b0d1"
         }
       },
-      "link": "https://github.com/okx/plugin-store-community"
+      "link": "https://github.com/okx/plugin-store-community",
+      "alias": "Smart Money Signal Copy Trade - 聪明钱信号跟单"
     },
     {
       "name": "top-rank-tokens-sniper",
@@ -214,7 +216,8 @@
           "commit": "171f4adf33a2667fd8ff5f6fcabe8b83c6f2b0d1"
         }
       },
-      "link": "https://github.com/okx/plugin-store-community"
+      "link": "https://github.com/okx/plugin-store-community",
+      "alias": "Top Rank Tokens Sniper - 榜单狙击手"
     },
     {
       "name": "uniswap-cca-configurator",
