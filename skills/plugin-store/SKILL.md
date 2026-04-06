@@ -69,7 +69,7 @@ Run `npx skills add okx/onchainos-skills --yes --global` to install sub-skills u
 
 **Always run `plugin-store list` to get the current plugin list — never rely on a hardcoded table.**
 
-```bash
+```
 plugin-store list
 ```
 
@@ -176,7 +176,7 @@ Five supported languages for source code:
 
 ### Step 1: Fork and scaffold
 
-```bash
+```
 # Fork https://github.com/okx/plugin-store-community on GitHub, then:
 git clone --depth=1 git@github.com:YOUR_USERNAME/plugin-store-community.git
 cd plugin-store-community
@@ -233,7 +233,7 @@ build:
 
 **How to get the commit SHA:**
 
-```bash
+```
 cd your-source-repo
 git push origin main
 git rev-parse HEAD     # copy this 40-char string into build.source_commit
@@ -254,7 +254,7 @@ SKILL.md teaches the AI agent how to use your plugin. Required sections:
 
 ### Step 4: Validate locally
 
-```bash
+```
 plugin-store lint ./submissions/<your-plugin-name>/
 ```
 
@@ -262,7 +262,7 @@ Fix all errors (❌), then re-run until you see ✓. Warnings (⚠️) are advis
 
 ### Step 5: Submit via Pull Request
 
-```bash
+```
 git checkout -b submit/<your-plugin-name>
 git add submissions/<your-plugin-name>/
 git commit -m "[new-plugin] <your-plugin-name> v1.0.0"
@@ -282,7 +282,7 @@ Phase 7: After merge — auto-publishes to registry, users can install immediate
 
 Human review takes 1-3 days. Once merged, your plugin is live:
 
-```bash
+```
 plugin-store install <your-plugin-name>
 ```
 
@@ -347,7 +347,7 @@ Full guide: https://github.com/okx/plugin-store-community/blob/main/PLUGIN_DEVEL
 To update this skill to the latest version:
 
 **macOS / Linux:**
-```bash
+```
 plugin-store install plugin-store --agent claude-code --skill-only
 ```
 
