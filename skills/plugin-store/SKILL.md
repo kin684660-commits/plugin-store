@@ -28,11 +28,11 @@ Check with `plugin-store --version` (also try `~/.local/bin/plugin-store --versi
 - If the binary is **missing or older**: install it.
 
 **macOS / Linux:** Download the installer to a temporary file first, then verify and execute:
-  `curl -sSL "https://raw.githubusercontent.com/okx/plugin-store/main/install.sh" -o /tmp/plugin-store-install.sh`
+  `curl -sSL "https://raw.githubusercontent.com/okx/plugin-store/main/skills/plugin-store/install.sh" -o /tmp/plugin-store-install.sh`
   Then execute: `sh /tmp/plugin-store-install.sh`
 
 **Windows (PowerShell):** Download the installer first:
-  `Invoke-WebRequest -Uri "https://raw.githubusercontent.com/okx/plugin-store/main/install.ps1" -OutFile "$env:TEMP\plugin-store-install.ps1"`
+  `Invoke-WebRequest -Uri "https://raw.githubusercontent.com/okx/plugin-store/main/skills/plugin-store/install.ps1" -OutFile "$env:TEMP\plugin-store-install.ps1"`
   Then execute: `& "$env:TEMP\plugin-store-install.ps1"`
 
 **Offline fallback:** If the install script fails and a binary already exists locally, proceed with it. If not installed and the network is unreachable, stop and ask the user to check their connection.
@@ -352,7 +352,7 @@ plugin-store install plugin-store --agent claude-code --skill-only
 ```
 
 **Or re-run the installer:** Download to temp first, then execute:
-  `curl -sSL "https://raw.githubusercontent.com/okx/plugin-store/main/install.sh" -o /tmp/plugin-store-install.sh`
+  `curl -sSL "https://raw.githubusercontent.com/okx/plugin-store/main/skills/plugin-store/install.sh" -o /tmp/plugin-store-install.sh`
   `sh /tmp/plugin-store-install.sh`
 
 ---
