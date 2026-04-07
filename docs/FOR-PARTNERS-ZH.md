@@ -1,8 +1,8 @@
 # 合作伙伴指南
 
-本指南面向希望在 OKX Plugin Store 中发布插件的 OKX 内部团队和外部合作伙伴。涵盖提交流程、信任徽章、可见性选项，以及最关键的——高风险插件政策。
+本指南面向希望在 OKX Plugin Store 中发布Plugin的 OKX 内部团队和外部合作伙伴。涵盖提交流程、信任徽章、可见性选项，以及最关键的——高风险Plugin政策。
 
-所有插件提交至单一仓库 **`okx/plugin-store`**，放置在 `skills/` 目录下。没有单独的社区仓库。
+所有Plugin提交至单一仓库 **`okx/plugin-store`**，放置在 `skills/` 目录下。没有单独的社区仓库。
 
 ---
 
@@ -21,7 +21,7 @@
 
 ---
 
-## 2. 高风险插件政策
+## 2. 高风险Plugin政策
 
 > **这是本文档中最重要的部分。请仔细阅读。**
 
@@ -29,11 +29,11 @@
 
 **OKX 品牌不得与高风险交易策略产生关联。**
 
-内部开发的高风险插件必须使用个人 GitHub 账号提交，并以社区贡献的形式展示——绝不能作为 OKX 官方产品。
+内部开发的高风险Plugin必须使用个人 GitHub 账号提交，并以社区贡献的形式展示——绝不能作为 OKX 官方产品。
 
 ### 高风险的判定标准
 
-满足以下**任意一项**条件的插件即被归类为高风险：
+满足以下**任意一项**条件的Plugin即被归类为高风险：
 
 - 无需用户逐笔确认的自动交易
 - 跟单交易或信号跟踪
@@ -45,17 +45,17 @@
 
 | 场景 | 提交方式 | 徽章 | 营销用语 |
 |------|----------|------|----------|
-| OKX 内部，低风险插件 | OKX 组织账号提交至 `skills/` | Official | 允许使用"OKX Official"品牌 |
-| OKX 内部，高风险插件 | 个人 GitHub 账号提交至 `skills/` | Community | 仅限"社区展示"。**不得使用任何 OKX 品牌。** |
-| 外部合作伙伴插件 | 合作伙伴账号提交至 `skills/` | Verified Partner | 允许联合品牌。必须包含"by [合作伙伴名称]"。 |
+| OKX 内部，低风险Plugin | OKX 组织账号提交至 `skills/` | Official | 允许使用"OKX Official"品牌 |
+| OKX 内部，高风险Plugin | 个人 GitHub 账号提交至 `skills/` | Community | 仅限"社区展示"。**不得使用任何 OKX 品牌。** |
+| 外部合作伙伴Plugin | 合作伙伴账号提交至 `skills/` | Verified Partner | 允许联合品牌。必须包含"by [合作伙伴名称]"。 |
 
 ### 正确示例
 
-OKX 内部团队开发了一个自动交易机器人。他们使用个人 GitHub 账号（如 `alice-dev`）提交。插件列表显示"社区展示"，不提及 OKX。用户看到 Community 徽章，理解这是独立贡献。
+OKX 内部团队开发了一个自动交易机器人。他们使用个人 GitHub 账号（如 `alice-dev`）提交。Plugin列表显示"社区展示"，不提及 OKX。用户看到 Community 徽章，理解这是独立贡献。
 
 ### 错误示例
 
-同一团队使用 `okx` 组织账号提交该交易机器人。插件列表显示"OKX Official Auto-Trading Bot"。用户将高风险策略与 OKX 品牌关联。如果策略造成亏损，OKX 将承担声誉和潜在的法律责任。
+同一团队使用 `okx` 组织账号提交该交易机器人。Plugin列表显示"OKX Official Auto-Trading Bot"。用户将高风险策略与 OKX 品牌关联。如果策略造成亏损，OKX 将承担声誉和潜在的法律责任。
 
 **此政策不可商量。** 违反此规则的 PR 将被拒绝，无论代码质量如何。
 
@@ -63,16 +63,16 @@ OKX 内部团队开发了一个自动交易机器人。他们使用个人 GitHub
 
 ## 3. 仓库结构
 
-所有插件位于单一仓库：**`okx/plugin-store`**。
+所有Plugin位于单一仓库：**`okx/plugin-store`**。
 
 ```
 okx/plugin-store/
   skills/
     my-plugin/
-      plugin.yaml          # 必需：插件元数据
+      plugin.yaml          # 必需：Plugin元数据
       SKILL.md             # 必需：Skill 指令
       .claude-plugin/
-        plugin.json        # 必需：Claude 插件清单
+        plugin.json        # 必需：Claude Plugin清单
       scripts/             # 可选：Python 脚本
       references/          # 可选：参考文档
       LICENSE              # 建议包含
@@ -82,13 +82,13 @@ okx/plugin-store/
 
 | 文件 | 用途 |
 |------|------|
-| `plugin.yaml` | 插件元数据：名称、版本、分类、作者、许可证、构建配置 |
+| `plugin.yaml` | Plugin元数据：名称、版本、分类、作者、许可证、构建配置 |
 | `SKILL.md` | Skill 指令，包含 YAML frontmatter（name、version、description） |
-| `.claude-plugin/plugin.json` | Claude 插件清单，包含版本和元数据 |
+| `.claude-plugin/plugin.json` | Claude Plugin清单，包含版本和元数据 |
 
 ### 安装方式
 
-用户通过 npx 安装插件：
+用户通过 npx 安装Plugin：
 
 ```bash
 npx @anthropic-ai/claude-code skills add <plugin-name>
@@ -106,7 +106,7 @@ npx @anthropic-ai/claude-code skills add <plugin-name>
    ```
    示例：`partner/dex-team/swap-aggregator`
 
-2. **将插件添加**到 `skills/<plugin-name>/` 目录，包含所有必需文件（`plugin.yaml`、`SKILL.md`、`.claude-plugin/plugin.json`，以及源代码如适用）。
+2. **将Plugin添加**到 `skills/<plugin-name>/` 目录，包含所有必需文件（`plugin.yaml`、`SKILL.md`、`.claude-plugin/plugin.json`，以及源代码如适用）。
 
 3. **提交 PR**，使用标准 PR 模板。填写提交前检查清单（参见 [REVIEW-GUIDELINES.md](./REVIEW-GUIDELINES.md) 或 [REVIEW-GUIDELINES-ZH.md](./REVIEW-GUIDELINES-ZH.md)）。
 
@@ -117,9 +117,9 @@ npx @anthropic-ai/claude-code skills add <plugin-name>
    - **Phase 4**（`plugin-summary.yml`）：摘要生成 + Pre-flight 注入。在 `summary-generation` 环境门控下运行（需维护者批准）。
    - **Phase 5**：通过 CODEOWNERS 分配的人工审核。内部提交经过相同的自动化管道，但人工审核可能享有快速通道。
 
-5. **合并和发布。** 审批通过后，插件出现在 Plugin Store 注册表中。
+5. **合并和发布。** 审批通过后，Plugin出现在 Plugin Store 注册表中。
 
-**提醒：** 如果您的插件是高风险的，请使用个人 GitHub 账号提交，而不是 OKX 组织账号。参见第 2 节。
+**提醒：** 如果您的Plugin是高风险的，请使用个人 GitHub 账号提交，而不是 OKX 组织账号。参见第 2 节。
 
 ---
 
@@ -127,19 +127,19 @@ npx @anthropic-ai/claude-code skills add <plugin-name>
 
 适用于 OKX 外部的公司和项目：
 
-1. **联系 OKX BD（商务拓展）团队**，表达发布插件的意愿。提供公司名称、插件概念和目标链。
+1. **联系 OKX BD（商务拓展）团队**，表达发布Plugin的意愿。提供公司名称、Plugin概念和目标链。
 
 2. **技术评估。** BD 团队将您与 Plugin Store 工程团队对接，进行技术可行性评审。
 
-3. **签署合作协议**，涵盖插件维护责任、事件响应义务和品牌使用准则。
+3. **签署合作协议**，涵盖Plugin维护责任、事件响应义务和品牌使用准则。
 
 4. **获取 Verified Partner 访问权限。** 您将获得具有写入权限的 GitHub 账号或团队，可向 `okx/plugin-store` 仓库提交 PR。
 
-5. **提交插件**至 `skills/<plugin-name>/`，遵循标准结构和 PR 模板。
+5. **提交Plugin**至 `skills/<plugin-name>/`，遵循标准结构和 PR 模板。
 
 6. **完整审核。** 您的提交将经过完整的自动化管道（Phase 1-4）加上人工审核。合作伙伴通道提供专属审核者，在流程中解答问题。
 
-7. **合并和发布。** 审批通过后，插件以 Verified Partner 徽章和您的品牌出现在注册表中。
+7. **合并和发布。** 审批通过后，Plugin以 Verified Partner 徽章和您的品牌出现在注册表中。
 
 ---
 
@@ -179,9 +179,9 @@ AI 审核者使用的安全规则维护在 `.github/security-rules/` 中：
 访问权限通过 `.github/CODEOWNERS` 管理：
 
 - **核心基础设施**（cli/、registry.json、.github/、.claude-plugin/）—— 仅 `@okx/plugin-store-core`
-- **官方插件**（skills/plugin-store/）—— `@okx/plugin-store-core`
-- **认证合作伙伴插件**（skills/uniswap-*/、skills/polymarket-*/）—— `@okx/plugin-store-core`
-- **所有其他插件**（skills/）—— `@okx/plugin-store-reviewers`
+- **官方Plugin**（skills/plugin-store/）—— `@okx/plugin-store-core`
+- **认证合作伙伴Plugin**（skills/uniswap-*/、skills/polymarket-*/）—— `@okx/plugin-store-core`
+- **所有其他Plugin**（skills/）—— `@okx/plugin-store-reviewers`
 - **文档**（docs/、README.md）—— `@okx/plugin-store-core`
 
 ---
@@ -190,12 +190,12 @@ AI 审核者使用的安全规则维护在 `.github/security-rules/` 中：
 
 | 展示位置 | 资格 | 获取方式 |
 |----------|------|----------|
-| README 精选表格 | Official 和 Verified Partner 插件 | 合并后自动包含 |
-| 分类置顶 | 给定分类中的最佳插件 | 由 Plugin Store PM 选择 |
-| FOR-USERS.md 案例研究 | 任何具有典型使用示例的插件 | 在 PR 中提交 3 行使用示例 |
-| 网站精选 | PM 批准的、具有广泛吸引力的插件 | 直接联系 Plugin Store PM |
+| README 精选表格 | Official 和 Verified Partner Plugin | 合并后自动包含 |
+| 分类置顶 | 给定分类中的最佳Plugin | 由 Plugin Store PM 选择 |
+| FOR-USERS.md 案例研究 | 任何具有典型使用示例的Plugin | 在 PR 中提交 3 行使用示例 |
+| 网站精选 | PM 批准的、具有广泛吸引力的Plugin | 直接联系 Plugin Store PM |
 
-展示位置每季度审核一次。高质量、积极维护且用户反馈良好的插件将获得优先考虑。
+展示位置每季度审核一次。高质量、积极维护且用户反馈良好的Plugin将获得优先考虑。
 
 ---
 
@@ -207,12 +207,12 @@ AI 审核者使用的安全规则维护在 `.github/security-rules/` 中：
 
 | 字段 | 说明 |
 |------|------|
-| 插件名称 | 简短的描述性名称（小写，允许连字符） |
-| 描述 | 插件功能的一段话摘要 |
+| Plugin名称 | 简短的描述性名称（小写，允许连字符） |
+| 描述 | Plugin功能的一段话摘要 |
 | 分类 | 以下之一：`trading`、`defi`、`game`、`prediction`、`data_tools`、`dev_tools`、`others` |
 | 风险级别 | `low`、`medium` 或 `high`（分类标准参见第 2 节） |
 | 策略概述 | 仅供内部使用的策略逻辑描述（不会公开发布） |
-| 使用示例 | 三个展示插件使用方式的命令或工作流示例 |
+| 使用示例 | 三个展示Plugin使用方式的命令或工作流示例 |
 | 目标日期 | 计划发布日期 |
 | 提交方式 | OKX 组织账号（仅限低风险）或个人账号（高风险） |
 | GitHub 账号 | 拥有该提交的 GitHub 用户名 |
@@ -223,9 +223,9 @@ AI 审核者使用的安全规则维护在 `.github/security-rules/` 中：
 |------|------|
 | 公司名称 | 法律实体名称 |
 | 联系人 | 主要技术联系人的姓名和邮箱 |
-| 插件描述 | 插件功能及其对用户价值的详细描述 |
-| 支持的链 | 插件交互的区块链列表 |
-| API 文档链接 | 您的 API 文档 URL（如果插件调用您的 API） |
+| Plugin描述 | Plugin功能及其对用户价值的详细描述 |
+| 支持的链 | Plugin交互的区块链列表 |
+| API 文档链接 | 您的 API 文档 URL（如果Plugin调用您的 API） |
 | 品牌素材 | Logo（推荐 SVG 格式）和用于商城展示的标语 |
 | 目标发布日期 | 计划发布日期 |
 
@@ -233,18 +233,18 @@ AI 审核者使用的安全规则维护在 `.github/security-rules/` 中：
 
 ## 9. 事件响应
 
-如果已发布的插件被发现存在安全漏洞、恶意行为或严重 bug，将按以下时间线处理：
+如果已发布的Plugin被发现存在安全漏洞、恶意行为或严重 bug，将按以下时间线处理：
 
 | 时间范围 | 操作 |
 |----------|------|
-| **立即** | 在 `registry.json` 中将插件标记为 `suspended`。警告用户不要安装或使用。 |
+| **立即** | 在 `registry.json` 中将Plugin标记为 `suspended`。警告用户不要安装或使用。 |
 | **1 小时内** | 合并 PR 以禁用安装。现有安装在 CLI 中标记安全警告。 |
-| **24 小时内** | 完成根因分析。通知插件作者（内部团队或外部合作伙伴）并提供调查结果。 |
-| **后续跟进** | 作者提交修复，插件重新经过完整审核管道。如果问题无法解决，插件将从注册表中永久移除。 |
+| **24 小时内** | 完成根因分析。通知Plugin作者（内部团队或外部合作伙伴）并提供调查结果。 |
+| **后续跟进** | 作者提交修复，Plugin重新经过完整审核管道。如果问题无法解决，Plugin将从注册表中永久移除。 |
 
 ### 合作伙伴在事件中的责任
 
 - **内部团队**：在工作时间内 1 小时内响应事件通道。24 小时内提供修复或缓解方案。
-- **外部合作伙伴**：在工作时间内 4 小时内响应（依据合作协议）。48 小时内提供修复，否则插件将被永久移除。
+- **外部合作伙伴**：在工作时间内 4 小时内响应（依据合作协议）。48 小时内提供修复，否则Plugin将被永久移除。
 
 重复事件（6 个月内 3 次或以上）可能导致撤销发布权限。
