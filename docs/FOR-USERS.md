@@ -242,7 +242,7 @@ one for your needs.
 | Auto-trade newly launched meme tokens | Meme Trench Scanner | `npx skills add okx/plugin-store --skill meme-trench-scanner` | Advanced |
 | Snipe tokens from OKX leaderboard | Top Rank Tokens Sniper | `npx skills add okx/plugin-store --skill top-rank-tokens-sniper` | Advanced |
 | Copy trades from smart money wallets | Smart Money Signal Copy Trade | `npx skills add okx/plugin-store --skill smart-money-signal-copy-trade` | Advanced |
-| Run E2E test for Rust CLI integration | Test Rust CLI | `npx skills add okx/plugin-store --skill test-rust-cli` | Starter |
+| Run E2E test for Rust CLI integration | Test Rust CLI | `npx skills add okx/plugin-store --skill rust-cli-inspector` | Starter |
 
 ### Find by risk level
 

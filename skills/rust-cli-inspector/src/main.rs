@@ -13,11 +13,11 @@ fn main() {
             Err(e) => eprintln!("Error: {}", e),
         }
     } else if args.len() > 1 && args[1] == "--help" {
-        println!("test-rust-cli v1.0.0");
-        println!("Usage: test-rust-cli --query eth-price");
+        println!("rust-cli-inspector v1.0.0");
+        println!("Usage: rust-cli-inspector --query eth-price");
         println!("Queries ETH price via onchainos token price-info");
     } else {
-        println!("test-rust-cli v1.0.0 - Querying ETH price via onchainos...");
+        println!("rust-cli-inspector v1.0.0 - Querying ETH price via onchainos...");
         let output = Command::new("onchainos")
             .args(["token", "price-info", "--address", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "--chain", "ethereum"])
             .output();

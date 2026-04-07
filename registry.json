@@ -149,7 +149,7 @@
       "skill_summary_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/smart-money-signal-copy-trade/SKILL_SUMMARY.md"
     },
     {
-      "name": "test-rust-cli",
+      "name": "rust-cli-inspector",
       "version": "1.0.0",
       "description": "E2E test - Rust CLI querying ETH price via OnchainOS",
       "author": {
@@ -166,27 +166,27 @@
       "components": {
         "skill": {
           "repo": "okx/plugin-store",
-          "dir": "skills/test-rust-cli",
+          "dir": "skills/rust-cli-inspector",
           "commit": "bfb40fdeec46267cf83e0136557cd9a9c569aec6"
         },
         "binary": {
           "repo": "okx/plugin-store",
-          "asset_pattern": "test-rust-cli-{target}",
+          "asset_pattern": "rust-cli-inspector-{target}",
           "checksums_asset": "checksums.txt",
-          "release_tag": "plugins/test-rust-cli@1.0.0"
+          "release_tag": "plugins/rust-cli-inspector@1.0.0"
         }
       },
-      "link": "https://github.com/okx/plugin-store/tree/main/skills/test-rust-cli",
-      "homepage": "https://github.com/okx/plugin-store/tree/main/skills/test-rust-cli",
-      "readme_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/test-rust-cli/README.md",
-      "skill_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/test-rust-cli/SKILL.md",
-      "summary_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/test-rust-cli/SUMMARY.md",
-      "skill_summary_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/test-rust-cli/SKILL_SUMMARY.md",
+      "link": "https://github.com/okx/plugin-store/tree/main/skills/rust-cli-inspector",
+      "homepage": "https://github.com/okx/plugin-store/tree/main/skills/rust-cli-inspector",
+      "readme_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/rust-cli-inspector/README.md",
+      "skill_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/rust-cli-inspector/SKILL.md",
+      "summary_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/rust-cli-inspector/SUMMARY.md",
+      "skill_summary_url": "https://raw.githubusercontent.com/okx/plugin-store/main/skills/rust-cli-inspector/SKILL_SUMMARY.md",
       "build": {
         "lang": "rust",
         "source_repo": "null",
         "source_commit": "null",
-        "binary_name": "test-rust-cli"
+        "binary_name": "rust-cli-inspector"
       }
     },
     {

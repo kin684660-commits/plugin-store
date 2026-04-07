@@ -32,9 +32,9 @@
       "source": "./skills/smart-money-signal-copy-trade"
     },
     {
-      "name": "test-rust-cli",
+      "name": "rust-cli-inspector",
       "description": "E2E test - Rust CLI querying ETH price via OnchainOS",
-      "source": "./skills/test-rust-cli"
+      "source": "./skills/rust-cli-inspector"
     },
     {
       "name": "top-rank-tokens-sniper",

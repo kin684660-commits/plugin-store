@@ -1,7 +1,7 @@
 schema_version: 1
-name: test-rust-cli
+name: rust-cli-inspector
 version: "1.0.0"
-description: "E2E test - Rust CLI querying ETH price via OnchainOS"
+description: "Rust CLI Inspector - querying ETH price via OnchainOS"
 author:
   name: "E2E Test"
   github: "MigOKG"
@@ -13,4 +13,4 @@ components:
     dir: .
 build:
   lang: rust
-  binary_name: test-rust-cli
+  binary_name: rust-cli-inspector
