@@ -369,12 +369,11 @@ jobs:
                 else
                   cargo build --release --target ${{ matrix.target }}
                 fi
-                # Handle Windows .exe extension
-                if [[ "${{ matrix.target }}" == *"windows"* ]]; then
-                  cp "target/${{ matrix.target }}/release/${BIN}.exe" "/tmp/${BIN}-${{ matrix.target }}.exe"
-                else
-                  cp "target/${{ matrix.target }}/release/${BIN}" "/tmp/${BIN}-${{ matrix.target }}"
-                fi
+                # Copy binary (Windows adds .exe)
+                case "${{ matrix.target }}" in
+                  *windows*) cp "target/${{ matrix.target }}/release/${BIN}.exe" "/tmp/${BIN}-${{ matrix.target }}.exe" ;;
+                  *) cp "target/${{ matrix.target }}/release/${BIN}" "/tmp/${BIN}-${{ matrix.target }}" ;;
+                esac
                 ;;
               go)
                 case "${{ matrix.target }}" in
@@ -405,6 +404,8 @@ jobs:
           path: |
             /tmp/*-${{ matrix.target }}
             /tmp/*-${{ matrix.target }}.exe
+            ${{ runner.temp }}/*-${{ matrix.target }}
+            ${{ runner.temp }}/*-${{ matrix.target }}.exe
           if-no-files-found: ignore
 
   # ═══════════════════════════════════════════════════════════════
