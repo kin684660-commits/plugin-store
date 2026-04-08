@@ -457,20 +457,28 @@ jobs:
               TITLE="${NAME} v${VERSION}"
               SRC_REPO=$(echo "$PLUGIN" | jq -r '.source_repo // empty')
               SRC_COMMIT=$(echo "$PLUGIN" | jq -r '.source_commit // empty')
-              if [ -n "$SRC_REPO" ] && [ -n "$SRC_COMMIT" ]; then
-                NOTES="Source: [${SRC_REPO}@${SRC_COMMIT:0:7}](https://github.com/${SRC_REPO}/tree/${SRC_COMMIT})"
-              else
-                NOTES="Built from source code in \`skills/${NAME}/\`"
-              fi
+              AUTHOR=$(yq '.author.name // "Community"' "skills/${NAME}/plugin.yaml" 2>/dev/null || echo "Community")
+              AUTHOR_GH=$(yq '.author.github // ""' "skills/${NAME}/plugin.yaml" 2>/dev/null || echo "")
+              DESC=$(yq '.description // ""' "skills/${NAME}/plugin.yaml" 2>/dev/null || echo "")
+              LANG=$(echo "$PLUGIN" | jq -r '.lang // "unknown"')
+              PLATFORM_COUNT=$(ls ${BIN}-* 2>/dev/null | wc -l | tr -d ' ')
 
-              # Release on THIS repo (community), not plugin-store
-              # If release exists, delete it first then recreate (ensures clean assets)
-              echo "Creating release: $TAG with $(ls ${BIN}-* | wc -l) binaries"
+              # Build release notes
+              NOTES_FILE="/tmp/release-notes-${NAME}.md"
+              CONTRIBUTOR="${AUTHOR_GH:-$AUTHOR}"
+              if [ -n "$SRC_REPO" ] && [ -n "$SRC_COMMIT" ]; then
+                SRC_LINE="Source: [${SRC_REPO}](https://github.com/${SRC_REPO}/tree/${SRC_COMMIT})"
+              else
+                SRC_LINE="Source: skills/${NAME}/ (included in submission)"
+              fi
+              printf '%s\n' "## What's Changed" "" "- **${NAME}** v${VERSION} -- ${DESC}" "- Language: ${LANG} | Platforms: ${PLATFORM_COUNT}" "- Install: npx skills add okx/plugin-store --skill ${NAME}" "- ${SRC_LINE}" "" "## New Contributors" "" "- **${CONTRIBUTOR}** made their first contribution" "" "## Contributors" "" "- **${CONTRIBUTOR}** " "" "---" "Published by OKX Plugin Store CI" > "$NOTES_FILE"
+
+              echo "Creating release: $TAG with ${PLATFORM_COUNT} binaries"
               gh release delete "$TAG" --repo "${{ github.repository }}" --yes 2>/dev/null || true
               gh release create "$TAG" \
                 --repo "${{ github.repository }}" \
                 --title "$TITLE" \
-                --notes "$NOTES" \
+                --notes-file "$NOTES_FILE" \
                 ${BIN}-* checksums.txt 2>&1 && echo "Release created: $TAG" \
                 || echo "::warning::Release create failed for $TAG"
             fi
