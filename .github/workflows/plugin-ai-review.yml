@@ -254,9 +254,15 @@ jobs:
           import yaml
           with open('${YAML_FILE}') as f:
               data = yaml.safe_load(f)
+          # Check components.skill.repo first (Mode C marketplace import)
           skill = data.get('components', {}).get('skill', {})
           repo = skill.get('repo', '')
           commit = skill.get('commit', '')
+          # Fallback to build.source_repo (Mode B external build)
+          if not repo:
+              build = data.get('build', {})
+              repo = build.get('source_repo', '')
+              commit = build.get('source_commit', '')
           if repo and repo != 'okx/plugin-store':
               print(f'{repo} {commit}')
           " 2>/dev/null || echo "")
@@ -268,11 +274,26 @@ jobs:
 
             EXTERNAL_DIR="/tmp/external-plugin"
             rm -rf "$EXTERNAL_DIR"
+            # Also detect build.source_dir for monorepo subdirectory
+            EXT_SOURCE_DIR=$(python3 -c "
+            import yaml
+            with open('${YAML_FILE}') as f:
+                data = yaml.safe_load(f)
+            sd = data.get('build', {}).get('source_dir', '.')
+            print(sd if sd != '.' else '')
+            " 2>/dev/null || echo "")
+
             if git clone --depth=100 "https://github.com/${EXT_REPO}.git" "$EXTERNAL_DIR" 2>/dev/null; then
               if [ -n "$EXT_COMMIT" ]; then
                 cd "$EXTERNAL_DIR" && git checkout "$EXT_COMMIT" 2>/dev/null && cd - > /dev/null
               fi
-              echo "External repo cloned successfully"
+              # Narrow to source_dir subdirectory if specified (monorepo support)
+              if [ -n "$EXT_SOURCE_DIR" ] && [ -d "$EXTERNAL_DIR/$EXT_SOURCE_DIR" ]; then
+                EXTERNAL_DIR="$EXTERNAL_DIR/$EXT_SOURCE_DIR"
+                echo "External repo cloned successfully (narrowed to $EXT_SOURCE_DIR/)"
+              else
+                echo "External repo cloned successfully"
+              fi
 
               # Find SKILL.md in external repo if not found locally
               if [ -z "$SKILL_FILE" ] || [ ! -f "$SKILL_FILE" ]; then
