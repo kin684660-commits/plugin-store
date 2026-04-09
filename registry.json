@@ -22,7 +22,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/compound-v3",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -74,7 +74,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/etherfi",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -124,7 +124,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/gmx-v2",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -172,7 +172,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/hyperliquid",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -223,7 +223,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/kamino-lend",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -272,7 +272,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/kamino-liquidity",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -322,7 +322,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/lido",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -370,7 +370,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/meme-trench-scanner",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store",
@@ -408,7 +408,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/meteora",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -450,7 +450,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/okx-buildx-hackathon-agent-track",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/okx-buildx-hackathon-agent-track",
@@ -481,7 +481,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/orca",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -524,7 +524,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/pancakeswap",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -573,7 +573,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/pendle",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -655,7 +655,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/polymarket",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -706,7 +706,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/polymarket-agent-skills",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/Polymarket/agent-skills",
@@ -736,7 +736,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/pump-fun",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -784,7 +784,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/rust-cli-inspector",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
@@ -831,7 +831,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/smart-money-signal-copy-trade",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store",
@@ -867,7 +867,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/top-rank-tokens-sniper",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store",
@@ -907,7 +907,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-ai",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/Uniswap/uniswap-ai",
@@ -938,7 +938,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-cca-configurator",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/uniswap-cca-configurator",
@@ -970,7 +970,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-cca-deployer",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/uniswap-cca-deployer",
@@ -1002,7 +1002,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-liquidity-planner",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/uniswap-liquidity-planner",
@@ -1034,7 +1034,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-pay-with-any-token",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/uniswap-pay-with-any-token",
@@ -1066,7 +1066,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-swap-integration",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/uniswap-swap-integration",
@@ -1098,7 +1098,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-swap-planner",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/uniswap-swap-planner",
@@ -1130,7 +1130,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-v4-security-foundations",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/uniswap-v4-security-foundations",
@@ -1162,7 +1162,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/uniswap-viem-integration",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         }
       },
       "link": "https://github.com/okx/plugin-store/tree/main/skills/uniswap-viem-integration",
@@ -1194,7 +1194,7 @@
         "skill": {
           "repo": "okx/plugin-store",
           "dir": "skills/velodrome-v2",
-          "commit": "2aea1f85f4b1b37fa3d3be7fd19d058f7bce7b52"
+          "commit": "31ceabb18c9b6770ddbfc72dc7b2d54194a14ed0"
         },
         "binary": {
           "repo": "okx/plugin-store",
