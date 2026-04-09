@@ -25,6 +25,15 @@
       }
     },
     {
+      "name": "hyperliquid",
+      "description": "Hyperliquid on-chain perpetuals DEX — check positions, get market prices, place and cancel perpetual orders on Hyperliquid L1 (chain_id 999).",
+      "source": "./skills/hyperliquid",
+      "category": "trading-strategy",
+      "author": {
+        "name": "GeoGu360"
+      }
+    },
+    {
       "name": "kamino-lend",
       "description": "Supply, borrow, and manage positions on Kamino Lend — the leading Solana lending protocol",
       "source": "./skills/kamino-lend",
@@ -43,9 +52,13 @@
       }
     },
     {
-      "name": "kamino-liquidity",
-      "description": "Plugin: kamino-liquidity",
-      "source": "./skills/kamino-liquidity"
+      "name": "lido",
+      "description": "Stake ETH with Lido liquid staking protocol to receive stETH",
+      "source": "./skills/lido",
+      "category": "defi-protocol",
+      "author": {
+        "name": "GeoGu360"
+      }
     },
     {
       "name": "meme-trench-scanner",
@@ -75,17 +88,21 @@
       }
     },
     {
-      "name": "pancakeswap",
-      "description": "Swap tokens and manage concentrated liquidity on PancakeSwap V3 on BNB Chain and Base",
-      "source": "./skills/pancakeswap"
-    },
-    {
       "name": "plugin-store",
       "description": "The main on-chain DeFi skill. Discover, install, update, and manage plugins — including trading strategies, DeFi integrations, and developer tools — across Claude Code, Cursor, and OpenClaw.",
       "source": "./skills/plugin-store",
       "category": "trading-strategy",
       "author": {
         "name": "OKX"
+      }
+    },
+    {
+      "name": "polymarket",
+      "description": "Trade prediction markets on Polymarket — buy and sell YES/NO outcome tokens on Polygon",
+      "source": "./skills/polymarket",
+      "category": "trading-strategy",
+      "author": {
+        "name": "skylavis-sky"
       }
     },
     {
