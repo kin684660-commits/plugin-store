@@ -7,6 +7,15 @@
   },
   "plugins": [
     {
+      "name": "aave-v3",
+      "description": "Lend and borrow crypto assets on Aave V3 — the leading decentralized liquidity protocol. Trigger phrases: supply to aave, deposit to aave, borrow from aave, repay aave loan, aave health factor, my aave positions, aave interest rates, enable emode, disable collateral, claim aave rewards.",
+      "source": "./skills/aave-v3",
+      "category": "defi-protocol",
+      "author": {
+        "name": "OKX"
+      }
+    },
+    {
       "name": "compound-v3",
       "description": "Compound V3 (Comet) lending plugin: supply collateral, borrow/repay the base asset, and claim COMP rewards",
       "source": "./skills/compound-v3",
@@ -79,6 +88,15 @@
       }
     },
     {
+      "name": "meteora",
+      "description": "Meteora DLMM plugin for searching pools, getting swap quotes, checking positions, and executing swaps on Solana",
+      "source": "./skills/meteora",
+      "category": "utility",
+      "author": {
+        "name": "skylavis-sky"
+      }
+    },
+    {
       "name": "okx-buildx-hackathon-agent-track",
       "description": "AI Hackathon participation guide — registration, wallet setup, project building, submission to Moltbook, voting, and scoring. Apr 1-15, 2026. $14,000 USDT in prizes.",
       "source": "./skills/okx-buildx-hackathon-agent-track",
@@ -122,11 +140,6 @@
       "author": {
         "name": "OKX"
       }
-    },
-    {
-      "name": "pancakeswap-clmm",
-      "description": "PancakeSwap V3 CLMM farming plugin — stake LP NFTs into MasterChefV3, harvest CAKE rewards, collect swap fees across BSC, Ethereum, Base, and Arbitrum. Trigger phrases: stake LP NFT, farm CAKE, harvest CAKE rewards, collect fees, unfarm position, PancakeSwap farming, view positions.",
-      "source": "./skills/pancakeswap-clmm"
     },
     {
       "name": "pendle",
