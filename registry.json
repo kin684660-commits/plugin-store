@@ -576,6 +576,34 @@
       }
     },
     {
+      "name": "raydium",
+      "version": "0.1.0",
+      "description": "Raydium AMM plugin for token swaps, price queries, and pool info on Solana mainnet. Trigger phrases: swap on raydium, raydium swap, raydium price, raydium pool, get swap quote raydium, raydium dex, swap solana raydium.",
+      "author": {
+        "name": "OKX"
+      },
+      "category": "utility",
+      "tags": [
+        "solana"
+      ],
+      "type": "official",
+      "components": {
+        "skill": {
+          "repo": "okx/plugin-store",
+          "dir": "skills/raydium"
+        }
+      },
+      "link": "https://github.com/okx/plugin-store",
+      "extra": {
+        "chains": [
+          "solana",
+          "base"
+        ],
+        "protocols": [],
+        "risk_level": "medium"
+      }
+    },
+    {
       "name": "rust-cli-inspector",
       "version": "1.1.0",
       "description": "Rust CLI querying ETH price via Onchain OS",
