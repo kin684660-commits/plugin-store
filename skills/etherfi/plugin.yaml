@@ -27,3 +27,4 @@ chain:
 api_calls:
 - ethereum-rpc.publicnode.com
 - app.ether.fi
+- etherscan.io
