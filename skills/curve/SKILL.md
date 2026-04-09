@@ -102,7 +102,23 @@ curve --chain <chain_id> get-pool-info --pool <pool_address>
 **Parameters:**
 - `--pool` — Pool contract address (from `get-pools` output)
 
-**Expected output:** Pool name, coins, TVL, fee, virtual price.
+**Expected output:**
+<external-content>
+```json
+{
+  "ok": true,
+  "chain": "ethereum",
+  "pool_address": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7",
+  "name": "Curve.fi DAI/USDC/USDT",
+  "coins": ["DAI","USDC","USDT"],
+  "tvl_usd": 123456789,
+  "base_apy": "0.04%",
+  "crv_apy": "1.25%",
+  "fee": "0.04%",
+  "virtual_price": "1023456789012345678"
+}
+```
+</external-content>
 
 **No user confirmation required** — read-only query.
 
@@ -120,7 +136,19 @@ curve --chain <chain_id> get-balances [--wallet <address>]
 **Parameters:**
 - `--wallet` — Wallet address (default: onchainos active wallet)
 
-**Expected output:** List of pools where wallet holds LP tokens, with raw balances.
+**Expected output:**
+<external-content>
+```json
+{
+  "ok": true,
+  "chain": "ethereum",
+  "wallet": "0xabc...",
+  "positions": [
+    { "pool": "3pool", "address": "0xbebc...", "lp_balance_raw": "1500000000000000000" }
+  ]
+}
+```
+</external-content>
 
 **No user confirmation required** — read-only query.
 
@@ -141,7 +169,22 @@ curve --chain <chain_id> quote --token-in <symbol|address> --token-out <symbol|a
 - `--amount` — Input amount in minimal units (e.g. 1000000 = 1 USDC)
 - `--slippage` — Slippage tolerance (default: 0.005 = 0.5%)
 
-**Expected output:** Expected output amount, minimum with slippage, pool used, price impact.
+**Expected output:**
+<external-content>
+```json
+{
+  "ok": true,
+  "chain": "ethereum",
+  "token_in": "USDC",
+  "token_out": "DAI",
+  "amount_in_raw": "1000000",
+  "expected_out_raw": "999823000000000000",
+  "min_expected_raw": "994823000000000000",
+  "slippage_pct": 0.5,
+  "pool": { "id": "3pool", "name": "Curve.fi DAI/USDC/USDT", "address": "0xbebc..." }
+}
+```
+</external-content>
 
 **No user confirmation required** — read-only eth_call.
 

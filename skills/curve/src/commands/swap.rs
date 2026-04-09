@@ -35,7 +35,6 @@ pub async fn run(
                 anyhow::bail!("Cannot determine wallet address. Pass --wallet or ensure onchainos is logged in.");
             }
             w
-            }
         }
     };
 
@@ -112,7 +111,7 @@ pub async fn run(
                 chain_id,
                 &token_in_addr,
                 &pool.address,
-                u128::MAX,
+                amount_in,
                 Some(&wallet_addr),
                 false,
             )

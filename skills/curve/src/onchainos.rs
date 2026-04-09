@@ -2,14 +2,13 @@
 use std::process::Command;
 use serde_json::Value;
 
-/// Resolve active wallet address from onchainos wallet balance
-pub fn resolve_wallet(chain_id: u64) -> anyhow::Result<String> {
-    let chain_str = chain_id.to_string();
+/// Resolve active wallet EVM address via `onchainos wallet addresses`.
+pub fn resolve_wallet(_chain_id: u64) -> anyhow::Result<String> {
     let output = Command::new("onchainos")
-        .args(["wallet", "balance", "--chain", &chain_str, "--output", "json"])
+        .args(["wallet", "addresses"])
         .output()?;
     let json: Value = serde_json::from_str(&String::from_utf8_lossy(&output.stdout))?;
-    Ok(json["data"]["address"].as_str().unwrap_or("").to_string())
+    Ok(json["data"]["evmAddress"].as_str().unwrap_or("").to_string())
 }
 
 /// Call onchainos wallet contract-call.

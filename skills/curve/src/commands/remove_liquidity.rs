@@ -20,10 +20,9 @@ pub async fn run(
         None => {
             let w = onchainos::resolve_wallet(chain_id)?;
             if w.is_empty() {
-                    anyhow::bail!("Cannot determine wallet address. Pass --wallet or ensure onchainos is logged in.");
-                }
-                w
+                anyhow::bail!("Cannot determine wallet address. Pass --wallet or ensure onchainos is logged in.");
             }
+            w
         }
     };
 
