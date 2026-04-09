@@ -86,6 +86,34 @@
       }
     },
     {
+      "name": "curve",
+      "version": "0.1.0",
+      "description": "Curve DEX plugin — swap stablecoins, add/remove liquidity, query pools and APY across Ethereum, Arbitrum, Base, Polygon, and BSC.",
+      "author": {
+        "name": "GeoGu360"
+      },
+      "category": "utility",
+      "tags": [
+        "ethereum"
+      ],
+      "type": "official",
+      "components": {
+        "skill": {
+          "repo": "okx/plugin-store",
+          "dir": "skills/curve"
+        }
+      },
+      "link": "https://github.com/okx/plugin-store",
+      "extra": {
+        "chains": [
+          "ethereum",
+          "base"
+        ],
+        "protocols": [],
+        "risk_level": "medium"
+      }
+    },
+    {
       "name": "etherfi",
       "version": "0.1.0",
       "description": "Liquid restaking on Ethereum — deposit ETH to receive eETH, wrap eETH to weETH (ERC-4626), and check positions with APY",
@@ -317,6 +345,36 @@
         ],
         "protocols": [],
         "risk_level": "medium"
+      }
+    },
+    {
+      "name": "morpho",
+      "version": "0.1.0",
+      "description": "Supply, borrow and earn yield on Morpho — a permissionless lending protocol with $5B+ TVL. Trigger phrases: supply to morpho, deposit to morpho vault, borrow from morpho, repay morpho loan, morpho health factor, my morpho positions, morpho interest rates, claim morpho rewards, morpho markets, metamorpho vaults.",
+      "author": {
+        "name": "GeoGu360"
+      },
+      "category": "trading-strategy",
+      "tags": [
+        "ethereum",
+        "trading",
+        "defi"
+      ],
+      "type": "official",
+      "components": {
+        "skill": {
+          "repo": "okx/plugin-store",
+          "dir": "skills/morpho"
+        }
+      },
+      "link": "https://github.com/okx/plugin-store",
+      "extra": {
+        "chains": [
+          "ethereum",
+          "base"
+        ],
+        "protocols": [],
+        "risk_level": "high"
       }
     },
     {

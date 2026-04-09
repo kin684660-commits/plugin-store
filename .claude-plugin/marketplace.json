@@ -34,6 +34,15 @@
       }
     },
     {
+      "name": "curve",
+      "description": "Curve DEX plugin — swap stablecoins, add/remove liquidity, query pools and APY across Ethereum, Arbitrum, Base, Polygon, and BSC.",
+      "source": "./skills/curve",
+      "category": "utility",
+      "author": {
+        "name": "GeoGu360"
+      }
+    },
+    {
       "name": "etherfi",
       "description": "Liquid restaking on Ethereum — deposit ETH to receive eETH, wrap eETH to weETH (ERC-4626), and check positions with APY",
       "source": "./skills/etherfi",
@@ -103,6 +112,15 @@
       "category": "utility",
       "author": {
         "name": "skylavis-sky"
+      }
+    },
+    {
+      "name": "morpho",
+      "description": "Supply, borrow and earn yield on Morpho — a permissionless lending protocol with $5B+ TVL. Trigger phrases: supply to morpho, deposit to morpho vault, borrow from morpho, repay morpho loan, morpho health factor, my morpho positions, morpho interest rates, claim morpho rewards, morpho markets, metamorpho vaults.",
+      "source": "./skills/morpho",
+      "category": "trading-strategy",
+      "author": {
+        "name": "GeoGu360"
       }
     },
     {
