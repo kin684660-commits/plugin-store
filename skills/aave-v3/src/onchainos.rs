@@ -13,33 +13,15 @@ fn base_cmd() -> Command {
 }
 
 /// Run a Command and return its stdout as a parsed JSON Value.
-/// Handles exit code 2 (onchainos confirming response) transparently:
-/// if the first call returns confirming=true, automatically retries with --force.
 fn run_cmd(mut cmd: Command) -> anyhow::Result<Value> {
     let output = cmd.output().context("Failed to spawn onchainos process")?;
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let exit_code = output.status.code().unwrap_or(-1);
-
-    // Exit code 2 = onchainos confirming response — re-run with --force
-    if exit_code == 2 {
-        let confirming: Value = serde_json::from_str(stdout.trim())
-            .unwrap_or(serde_json::json!({"confirming": true}));
-        if confirming.get("confirming").and_then(|v| v.as_bool()).unwrap_or(false) {
-            // Re-run the same command with --force appended
-            let mut force_cmd = cmd;
-            force_cmd.arg("--force");
-            let force_output = force_cmd.output().context("Failed to spawn onchainos --force process")?;
-            let force_stdout = String::from_utf8_lossy(&force_output.stdout);
-            return serde_json::from_str(force_stdout.trim())
-                .with_context(|| format!("Failed to parse onchainos --force JSON output: {}", force_stdout.trim()));
-        }
-    }
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         anyhow::bail!(
             "onchainos exited with status {}: stderr={} stdout={}",
-            exit_code,
+            output.status.code().unwrap_or(-1),
             stderr.trim(),
             stdout.trim()
         );

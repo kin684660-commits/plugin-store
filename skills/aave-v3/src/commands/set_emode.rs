@@ -25,7 +25,7 @@ pub async fn run(
 ) -> anyhow::Result<Value> {
     let cfg = get_chain_config(chain_id)?;
 
-    let from_addr = resolve_from(from)?;
+    let from_addr = resolve_from(from, chain_id)?;
 
     // Resolve Pool address at runtime
     let pool_addr = rpc::get_pool(cfg.pool_addresses_provider, cfg.rpc_url)
@@ -69,7 +69,7 @@ pub async fn run(
     }))
 }
 
-fn resolve_from(from: Option<&str>) -> anyhow::Result<String> {
+fn resolve_from(from: Option<&str>, chain_id: u64) -> anyhow::Result<String> {
     if let Some(addr) = from {
         return Ok(addr.to_string());
     }

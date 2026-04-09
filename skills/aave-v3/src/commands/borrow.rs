@@ -66,13 +66,12 @@ pub async fn run(
     // Note: amount validation is best-effort here since we don't have the USD price
     // of the specific asset. The on-chain tx will revert if over capacity.
 
-    // Encode calldata
-    // We need decimals for the asset — use 18 as default (handles WETH, WBTC needs 8)
-    // TODO: fetch decimals from reserves data for accuracy
-    let decimals = 18u64;
-    let amount_minimal = (amount * 10u128.pow(decimals as u32) as f64) as u128;
+    // Resolve asset address and decimals via onchainos token search (handles USDC=6, WBTC=8, etc.)
+    let (asset_addr, decimals) = onchainos::resolve_token(asset, chain_id)
+        .unwrap_or_else(|_| (asset.to_string(), 18));
+    let amount_minimal = (amount * 10u128::pow(decimals as u32) as f64) as u128;
 
-    let calldata = calldata::encode_borrow(asset, amount_minimal, &from_addr)
+    let calldata = calldata::encode_borrow(&asset_addr, amount_minimal, &from_addr)
         .context("Failed to encode borrow calldata")?;
 
     let result = onchainos::wallet_contract_call(
