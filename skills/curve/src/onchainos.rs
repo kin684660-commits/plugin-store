@@ -17,14 +17,17 @@ pub fn resolve_wallet(chain_id: u64) -> anyhow::Result<String> {
     Ok(addr)
 }
 
-/// Poll until a transaction is confirmed on-chain (up to ~24 seconds).
+/// Poll until a transaction is confirmed on-chain.
+/// Chain-aware timeout: Ethereum mainnet (~12s block time) = 20 attempts × 2s = 40s;
+/// fast chains (Base, Arbitrum, etc.) = 12 attempts × 2s = 24s.
 /// Called after approve --force so the main op simulation sees the updated allowance.
-pub async fn wait_for_tx(tx_hash: &str, rpc_url: &str) -> anyhow::Result<()> {
+pub async fn wait_for_tx(tx_hash: &str, rpc_url: &str, chain_id: u64) -> anyhow::Result<()> {
     if tx_hash == "0x0000000000000000000000000000000000000000000000000000000000000000" {
         return Ok(()); // dry-run stub hash — nothing to wait for
     }
+    let max_attempts: u32 = if chain_id == 1 { 20 } else { 12 };
     let client = reqwest::Client::new();
-    for _ in 0..12 {
+    for _ in 0..max_attempts {
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
         let body = serde_json::json!({
             "jsonrpc": "2.0", "method": "eth_getTransactionReceipt",
@@ -38,7 +41,8 @@ pub async fn wait_for_tx(tx_hash: &str, rpc_url: &str) -> anyhow::Result<()> {
             }
         }
     }
-    Ok(()) // proceed anyway after timeout (~24s)
+    eprintln!("Warning: wait_for_tx timed out after {}s — proceeding", max_attempts * 2);
+    Ok(()) // proceed anyway after timeout
 }
 
 /// Call onchainos wallet contract-call.

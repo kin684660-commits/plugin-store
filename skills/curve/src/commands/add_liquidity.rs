@@ -95,7 +95,7 @@ pub async fn run(
                 let ah = onchainos::extract_tx_hash_or_err(&approve_result)?;
                 eprintln!("Approve {} tx: {}", coin.symbol, ah);
                 // Wait for approve to confirm before proceeding (prevents simulation race condition)
-                onchainos::wait_for_tx(&ah, rpc_url).await?;
+                onchainos::wait_for_tx(&ah, rpc_url, chain_id).await?;
             }
         }
     }

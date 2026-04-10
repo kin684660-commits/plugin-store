@@ -71,6 +71,15 @@ pub async fn run(
 
     let min_expected = (amount_out as f64 * (1.0 - slippage)) as u128;
 
+    // Warn on high price impact (>5%)
+    let price_impact_pct = ((amount_in as f64 - amount_out as f64) / amount_in as f64 * 100.0).max(0.0);
+    if price_impact_pct > 5.0 {
+        eprintln!(
+            "Warning: high price impact {:.2}% — consider reducing swap size or checking pool liquidity",
+            price_impact_pct
+        );
+    }
+
     // Build exchange calldata
     // Selector: 0x3df02124 = exchange(int128,int128,uint256,uint256) for StableSwap pools
     // Selector: 0x5b41b908 = exchange(uint256,uint256,uint256,uint256) for CryptoSwap/factory-v2 pools
@@ -117,7 +126,7 @@ pub async fn run(
             .await?;
             let approve_hash = onchainos::extract_tx_hash_or_err(&approve_result)?;
             eprintln!("Approve tx: {}", approve_hash);
-            onchainos::wait_for_tx(&approve_hash, rpc_url).await?;
+            onchainos::wait_for_tx(&approve_hash, rpc_url, chain_id).await?;
         }
     }
 
