@@ -16,11 +16,11 @@ struct Cli {
     chain: u64,
 
     /// Simulate without broadcasting any transaction
-    #[arg(long, global = true)]
+    #[arg(long)]
     dry_run: bool,
 
     /// Optional Pendle API Bearer token (increases rate limit)
-    #[arg(long, global = true)]
+    #[arg(long)]
     api_key: Option<String>,
 
     #[command(subcommand)]

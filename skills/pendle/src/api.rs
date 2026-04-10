@@ -230,7 +230,20 @@ pub async fn sdk_convert(
         .send()
         .await
         .context("Failed to call Pendle SDK convert API")?;
-    let response: Value = resp.json().await.context("Failed to parse SDK convert response")?;
+
+    let status = resp.status();
+    let body_text = resp.text().await.context("Failed to read SDK convert response body")?;
+
+    if !status.is_success() {
+        anyhow::bail!(
+            "Pendle SDK convert returned HTTP {}: {}",
+            status.as_u16(),
+            body_text.trim()
+        );
+    }
+
+    let response: Value = serde_json::from_str(&body_text)
+        .context("Failed to parse SDK convert response")?;
     Ok(response)
 }
 

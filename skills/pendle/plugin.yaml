@@ -1,7 +1,7 @@
 schema_version: 1
 name: pendle
-version: "0.1.0"
-description: "Pendle Finance yield tokenization — buy/sell PT & YT tokens, add/remove liquidity, mint/redeem PT+YT pairs"
+version: "0.2.0"
+description: "Pendle Finance yield tokenization plugin — buy/sell PT & YT, add/remove liquidity, mint/redeem PT+YT pairs across Ethereum, Arbitrum, BSC, and Base"
 author:
   name: skylavis-sky
   github: skylavis-sky
@@ -23,8 +23,4 @@ build:
   binary_name: pendle
 
 api_calls:
-  - "https://api-v2.pendle.finance"
-  - "https://cloudflare-eth.com"
-  - "https://bsc-rpc.publicnode.com"
-  - "https://base-rpc.publicnode.com"
-  - "https://arb1.arbitrum.io/rpc"
+  - "https://api-v2.pendle.finance/core"
