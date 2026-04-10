@@ -27,15 +27,6 @@
       "source": "./skills/curve"
     },
     {
-      "name": "curve",
-      "description": "Curve DEX plugin — swap stablecoins, add/remove liquidity, query pools and APY across Ethereum, Arbitrum, Base, Polygon, and BSC.",
-      "source": "./skills/curve",
-      "category": "utility",
-      "author": {
-        "name": "GeoGu360"
-      }
-    },
-    {
       "name": "etherfi",
       "description": "Plugin: etherfi",
       "source": "./skills/etherfi"
@@ -79,15 +70,6 @@
       "name": "morpho",
       "description": "Supply, borrow and earn yield on Morpho — a permissionless lending protocol",
       "source": "./skills/morpho"
-    },
-    {
-      "name": "morpho",
-      "description": "Supply, borrow and earn yield on Morpho — a permissionless lending protocol with $5B+ TVL. Trigger phrases: supply to morpho, deposit to morpho vault, borrow from morpho, repay morpho loan, morpho health factor, my morpho positions, morpho interest rates, claim morpho rewards, morpho markets, metamorpho vaults.",
-      "source": "./skills/morpho",
-      "category": "trading-strategy",
-      "author": {
-        "name": "GeoGu360"
-      }
     },
     {
       "name": "okx-buildx-hackathon-agent-track",
