@@ -37,19 +37,26 @@ jobs:
     outputs:
       safe: ${{ steps.check.outputs.safe }}
     steps:
-      - name: Block .github modifications from forks
-        id: check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          PR_NUM=${{ github.event.pull_request.number }}
-          CHANGES=$(gh api repos/${{ github.repository }}/pulls/$PR_NUM/files --jq '.[].filename' | grep '^\\.github/' || true)
-          if [ -n "$CHANGES" ]; then
-            echo "::error::Fork PRs cannot modify .github/ files: $CHANGES"
-            echo "safe=false" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-          echo "safe=true" >> "$GITHUB_OUTPUT"
+        - uses: actions/checkout@v4
+          with:
+            repository: ${{ github.event.pull_request.head.repo.full_name }}
+            ref: ${{ github.event.pull_request.head.sha }}
+            persist-credentials: false
+            fetch-depth: 0
+
+        - name: Block .github modifications from forks
+          id: check
+          run: |
+            echo "Checking PR for .github/ modifications..."
+            CHANGES=$(git diff --name-only origin/main...${{ github.event.pull_request.head.sha }} | grep "^\.github/" || true)
+            if [ -n "$CHANGES" ]; then
+              echo "::error::Fork PRs cannot modify .github/ files:"
+              echo "$CHANGES"
+              echo "safe=false" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+            echo "No .github/ modifications detected"
+            echo "safe=true" >> "$GITHUB_OUTPUT"
 
   # ═══════════════════════════════════════════════════════════════
   #  Collect — zero permissions sandbox, checkout fork code
