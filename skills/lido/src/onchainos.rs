@@ -99,6 +99,47 @@ pub fn eth_call(chain_id: u64, to: &str, input_data: &str) -> anyhow::Result<Val
     }))
 }
 
+/// Poll eth_getTransactionReceipt until the TX is mined or timeout expires.
+/// Returns Ok(()) if status=1 (success), Err if reverted or not mined in time.
+pub async fn wait_for_receipt(chain_id: u64, tx_hash: &str, timeout_secs: u64) -> anyhow::Result<()> {
+    let rpc_url = match chain_id {
+        1 => "https://ethereum.publicnode.com",
+        _ => anyhow::bail!("Unsupported chain_id for receipt polling: {}", chain_id),
+    };
+    let client = reqwest::Client::new();
+    let interval = std::time::Duration::from_secs(3);
+    let max_attempts = (timeout_secs / 3).max(1);
+
+    for attempt in 0..max_attempts {
+        let body = serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "eth_getTransactionReceipt",
+            "params": [tx_hash],
+            "id": 1
+        });
+        let resp: Value = client.post(rpc_url).json(&body).send().await?.json().await?;
+        if let Some(receipt) = resp["result"].as_object() {
+            let status = receipt["status"].as_str().unwrap_or("0x0");
+            if status == "0x1" {
+                let block = receipt["blockNumber"].as_str().unwrap_or("?");
+                let block_num = u64::from_str_radix(block.trim_start_matches("0x"), 16).unwrap_or(0);
+                eprintln!("  ✓ confirmed in block {}", block_num);
+                return Ok(());
+            } else {
+                anyhow::bail!("Transaction {} reverted (status=0x0)", tx_hash);
+            }
+        }
+        if attempt < max_attempts - 1 {
+            eprintln!("  waiting for {} to be mined... ({}/{})", &tx_hash[..10], attempt + 1, max_attempts);
+            tokio::time::sleep(interval).await;
+        }
+    }
+    anyhow::bail!(
+        "Transaction {} not mined after {}s — it may have been dropped. Check gas price and retry.",
+        tx_hash, timeout_secs
+    )
+}
+
 pub fn extract_tx_hash(result: &Value) -> &str {
     result["data"]["txHash"]
         .as_str()

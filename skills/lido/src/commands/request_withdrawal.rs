@@ -94,7 +94,14 @@ pub async fn run(args: RequestWithdrawalArgs) -> anyhow::Result<()> {
     let approve_tx = onchainos::extract_tx_hash_or_err(&approve_result, "Approve")?;
     println!("Approve tx: {}", approve_tx);
 
-    // Step 2: Request withdrawal (requires approve to be mined first)
+    // Wait for approve to be mined before submitting requestWithdrawals.
+    // The contract checks allowance at execution time, so the approve must
+    // land on-chain first.
+    if args.confirm {
+        onchainos::wait_for_receipt(chain_id, &approve_tx, 120).await?;
+    }
+
+    // Step 2: Request withdrawal
     println!("Step 2/2: Submitting withdrawal request...");
     let request_result = onchainos::wallet_contract_call(
         chain_id,
@@ -108,6 +115,11 @@ pub async fn run(args: RequestWithdrawalArgs) -> anyhow::Result<()> {
     .await?;
     let request_tx = onchainos::extract_tx_hash_or_err(&request_result, "requestWithdrawals")?;
     println!("Request tx: {}", request_tx);
+
+    // Verify requestWithdrawals landed on-chain
+    if args.confirm {
+        onchainos::wait_for_receipt(chain_id, &request_tx, 120).await?;
+    }
     println!();
     println!("Withdrawal request submitted. You will receive an unstETH NFT (ERC-721).");
     println!("Use `lido get-withdrawals` to check status.");
