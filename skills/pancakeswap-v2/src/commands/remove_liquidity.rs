@@ -85,8 +85,11 @@ pub async fn run(args: RemoveLiquidityArgs) -> Result<serde_json::Value> {
     };
 
     let liq_u128 = if liquidity == 0 { 1u128 } else { liquidity };
-    let amount_a_expected = reserve_a * liq_u128 / total_supply;
-    let amount_b_expected = reserve_b * liq_u128 / total_supply;
+    // Use f64 to avoid u128 overflow: reserve (up to ~10^28) * lp (up to ~10^18)
+    // overflows u128 max (~3.4×10^38) for large pools. f64 gives sufficient
+    // precision for a withdrawal preview.
+    let amount_a_expected = ((reserve_a as f64) * (liq_u128 as f64) / (total_supply as f64)) as u128;
+    let amount_b_expected = ((reserve_b as f64) * (liq_u128 as f64) / (total_supply as f64)) as u128;
     let amount_a_min = amount_a_expected * (10000 - args.slippage_bps) as u128 / 10000;
     let amount_b_min = amount_b_expected * (10000 - args.slippage_bps) as u128 / 10000;
 
