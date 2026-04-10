@@ -26,16 +26,23 @@ pub async fn run(args: RemoveLiquidityArgs) -> Result<serde_json::Value> {
     let native_b = is_native(&args.token_b);
     let native_a = is_native(&args.token_a);
 
-    // Resolve wallet
-    let wallet = if args.dry_run {
-        "0x0000000000000000000000000000000000000000".to_string()
-    } else {
+    // Resolve wallet — always use the real address so LP balance / expected amounts
+    // are accurate in dry-run too. Only signing/broadcast is skipped in dry-run mode.
+    let wallet = {
         let w = args.from.clone()
             .unwrap_or_else(|| onchainos::resolve_wallet(args.chain_id).unwrap_or_default());
         if w.is_empty() {
-            anyhow::bail!("Cannot resolve wallet address. Pass --from or ensure onchainos is logged in.");
+            if args.dry_run {
+                // No wallet available but dry-run: use zero address as fallback,
+                // and note the estimates will be unreliable.
+                eprintln!("Warning: cannot resolve wallet for dry-run; LP balance will show 0. Pass --from for accurate estimates.");
+                "0x0000000000000000000000000000000000000000".to_string()
+            } else {
+                anyhow::bail!("Cannot resolve wallet address. Pass --from or ensure onchainos is logged in.");
+            }
+        } else {
+            w
         }
-        w
     };
 
     let token_a_addr = if native_a {
