@@ -49,7 +49,7 @@ if ! command -v morpho >/dev/null 2>&1; then
     mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
   esac
   mkdir -p ~/.local/bin
-  curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/morpho@0.1.0/morpho-${TARGET}${EXT}" -o ~/.local/bin/morpho${EXT}
+  curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/morpho@0.2.0/morpho-${TARGET}${EXT}" -o ~/.local/bin/morpho${EXT}
   chmod +x ~/.local/bin/morpho${EXT}
 fi
 ```
@@ -71,7 +71,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   # Report to Vercel stats
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"morpho","version":"0.1.0"}' >/dev/null 2>&1 || true
+    -d '{"name":"morpho","version":"0.2.0"}' >/dev/null 2>&1 || true
   # Report to OKX API (with HMAC-signed device token)
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \
@@ -211,8 +211,8 @@ morpho --chain 1 supply --vault 0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB --ass
 
 **What it does:**
 1. Resolves token decimals from on-chain `decimals()` call
-2. Step 1: Approves vault to spend the token — after user confirmation, submits via `onchainos wallet contract-call`
-3. Step 2: Calls `deposit(assets, receiver)` (ERC-4626) — after user confirmation, submits via `onchainos wallet contract-call`
+2. Step 1: Approves vault to spend the token — submits immediately via `onchainos wallet contract-call --force`; waits for on-chain confirmation before proceeding
+3. Step 2: Calls `deposit(assets, receiver)` (ERC-4626) — presents to user for confirmation via `onchainos wallet contract-call`
 
 **Expected output:**
 <external-content>
@@ -339,9 +339,9 @@ morpho --chain 1 repay --market-id 0xb323... --all
 
 **Notes:**
 - Full repayment uses `repay(marketParams, 0, borrowShares, onBehalf, 0x)` (shares mode) to avoid leaving dust.
-- A 0.5% approval buffer is added to cover accrued interest between approval and repay transactions.
-- Step 1 approves Morpho Blue to spend the loan token — after user confirmation, submits via `onchainos wallet contract-call`.
-- Step 2 calls `repay(...)` — after user confirmation, submits via `onchainos wallet contract-call`.
+- A 0.5% approval buffer is added to cover accrued interest between approval and repay transactions (1% buffer for `--all` mode).
+- Step 1 approves Morpho Blue to spend the loan token — submits immediately via `onchainos wallet contract-call --force`; waits for on-chain confirmation before proceeding.
+- Step 2 calls `repay(...)` — presents to user for confirmation via `onchainos wallet contract-call`.
 
 **Expected output:**
 <external-content>
@@ -472,8 +472,8 @@ morpho --chain 1 supply-collateral --market-id 0xb323... --amount 1.5
 
 **What it does:**
 1. Fetches `MarketParams` from the Morpho GraphQL API
-2. Step 1: Approves Morpho Blue to spend collateral token — after user confirmation, submits via `onchainos wallet contract-call`
-3. Step 2: Calls `supplyCollateral(marketParams, assets, onBehalf, 0x)` — after user confirmation, submits via `onchainos wallet contract-call`
+2. Step 1: Approves Morpho Blue to spend collateral token — submits immediately via `onchainos wallet contract-call --force`; waits for on-chain confirmation before proceeding
+3. Step 2: Calls `supplyCollateral(marketParams, assets, onBehalf, 0x)` — presents to user for confirmation via `onchainos wallet contract-call`
 
 **Expected output:**
 <external-content>
@@ -681,3 +681,5 @@ morpho --chain 8453 vaults --asset WETH
 | `No claimable rewards found` | No unclaimed rewards for this address on this chain |
 | `eth_call RPC error` | RPC endpoint may be rate-limited; retry or check network |
 | `Unknown asset symbol` | Provide the ERC-20 contract address instead of symbol |
+| `execution reverted: transferFrom reverted` on supply/repay | The approve tx was not yet confirmed when the main operation ran. This should not occur in v0.2.0+ (the plugin waits for approve confirmation). If it does, retry after a few seconds. |
+| `--all` withdraw-collateral fails with `insufficient collateral` | The GraphQL API may lag behind on-chain state by a few blocks. Use `--amount` with the exact balance from `morpho positions` instead. |
