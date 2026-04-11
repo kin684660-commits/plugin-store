@@ -6,7 +6,7 @@ mod rpc;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "compound-v3", about = "Compound V3 (Comet) lending plugin")]
+#[command(name = "compound-v3", version, about = "Compound V3 (Comet) lending plugin")]
 struct Cli {
     /// Chain ID (1=Ethereum, 8453=Base, 42161=Arbitrum, 137=Polygon)
     #[arg(long, default_value = "8453", global = true)]
