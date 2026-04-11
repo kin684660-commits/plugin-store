@@ -8,7 +8,7 @@ pub fn resolve_wallet(_chain_id: u64) -> anyhow::Result<String> {
         .args(["wallet", "addresses"])
         .output()?;
     let json: Value = serde_json::from_str(&String::from_utf8_lossy(&output.stdout))?;
-    Ok(json["data"]["evmAddress"].as_str().unwrap_or("").to_string())
+    Ok(json["data"][0]["evmAddress"].as_str().unwrap_or("").to_string())
 }
 
 /// Call onchainos wallet contract-call.

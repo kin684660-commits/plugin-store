@@ -53,6 +53,10 @@ pub async fn run(
         .and_then(|c| c.decimals.as_deref())
         .and_then(|d| d.parse().ok())
         .unwrap_or(18);
+    let out_decimals: u32 = out_coin
+        .and_then(|c| c.decimals.as_deref())
+        .and_then(|d| d.parse().ok())
+        .unwrap_or(18);
 
     // Convert human-readable amount to minimal units
     let amount_minimal = (amount_in * 10f64.powi(in_decimals as i32)) as u128;
@@ -74,8 +78,12 @@ pub async fn run(
     // Calculate min_expected with slippage
     let min_expected = (amount_out as f64 * (1.0 - slippage)) as u128;
     let price_impact_pct = {
-        let in_f = amount_minimal as f64;
-        let out_f = amount_out as f64;
+        // Normalize both raw amounts to the same 18-decimal scale before comparing.
+        // Without this, cross-decimal pairs (e.g. USDC=6 vs DAI=18) produce a wildly
+        // incorrect ratio because 1 USDC raw (1_000_000) != 1 DAI raw (1e18).
+        const NORM: u32 = 18;
+        let in_f = amount_minimal as f64 * 10f64.powi((NORM as i32) - (in_decimals as i32));
+        let out_f = amount_out as f64 * 10f64.powi((NORM as i32) - (out_decimals as i32));
         ((in_f - out_f) / in_f * 100.0).max(0.0)
     };
 

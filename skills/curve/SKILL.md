@@ -387,6 +387,6 @@ curve --chain 42161 remove-liquidity --pool <2pool_addr> --min-amounts "0,0"
 
 - Pool addresses are fetched from the official Curve API (`api.curve.finance`) only — never from user input
 - ERC-20 allowance is checked before each approve to avoid duplicate transactions
-- ERC-20 approvals use `--force`, then poll `onchainos wallet history` until the tx is confirmed before submitting the main op — prevents simulation race conditions
+- ERC-20 approvals do NOT use `--force`; after each approval tx is broadcast, the agent polls `onchainos wallet history` until the tx is confirmed before submitting the main op — prevents simulation race conditions
 - Price impact > 5% triggers a warning; handle in agent before calling `swap`
 - Use `--dry-run` to preview all write operations before execution
