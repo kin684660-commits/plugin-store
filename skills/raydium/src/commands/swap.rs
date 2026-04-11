@@ -1,20 +1,21 @@
 /// swap: Execute a token swap on Raydium via the transaction API + onchainos broadcast.
 ///
 /// Flow:
-///   1. (dry_run guard) — return early before wallet resolution
+///   1. (dry_run guard) - return early before wallet resolution
 ///   2. Resolve Solana wallet address
-///   3. GET /compute/swap-base-in → get quote
-///   4. POST /transaction/swap-base-in → get base64 serialized tx
-///   5. onchainos wallet contract-call --chain 501 --unsigned-tx <base64_tx>
+///   3. GET /compute/swap-base-in -> get quote
+///   4. POST /transaction/swap-base-in -> get base64 serialized tx
+///   5. onchainos wallet contract-call --chain 501 --unsigned-tx <base58_tx>
 ///
-/// NOTE: Steps 4 and 5 must happen consecutively — Solana blockhash expires in ~60s.
+/// NOTE: Steps 4 and 5 must happen consecutively - Solana blockhash expires in ~60s.
 use anyhow::Result;
 use clap::Args;
 use serde_json::Value;
 
 use crate::config::{
-    DEFAULT_COMPUTE_UNIT_PRICE, DEFAULT_SLIPPAGE_BPS, DEFAULT_TX_VERSION, PRICE_IMPACT_BLOCK_PCT,
-    PRICE_IMPACT_WARN_PCT, RAYDIUM_AMM_PROGRAM, TX_API_BASE,
+    parse_human_amount, DEFAULT_COMPUTE_UNIT_PRICE, DEFAULT_SLIPPAGE_BPS, DEFAULT_TX_VERSION,
+    PRICE_IMPACT_BLOCK_PCT, PRICE_IMPACT_WARN_PCT, RAYDIUM_AMM_PROGRAM, SOL_NATIVE_MINT,
+    USDC_SOLANA, TX_API_BASE,
 };
 use crate::onchainos;
 
@@ -28,9 +29,9 @@ pub struct SwapArgs {
     #[arg(long)]
     pub output_mint: String,
 
-    /// Input amount in base units (with decimals, e.g. 1000000000 for 1 SOL)
+    /// Input amount in human-readable units (e.g. "0.1" for 0.1 SOL, "1.5" for 1.5 USDC)
     #[arg(long)]
-    pub amount: u64,
+    pub amount: String,
 
     /// Slippage tolerance in basis points (default: 50 = 0.5%)
     #[arg(long, default_value_t = DEFAULT_SLIPPAGE_BPS)]
@@ -57,12 +58,44 @@ pub struct SwapArgs {
     pub from: Option<String>,
 }
 
+/// Resolve token decimals for well-known mints; fall back to Raydium mint API for others.
+/// SOL: 9 decimals, USDC on Solana: 6 decimals.
+async fn resolve_decimals(mint: &str, client: &reqwest::Client) -> anyhow::Result<u8> {
+    if mint == SOL_NATIVE_MINT {
+        return Ok(9);
+    }
+    if mint == USDC_SOLANA {
+        return Ok(6);
+    }
+    let url = format!("{}/mint/ids", crate::config::DATA_API_BASE);
+    let resp: Value = client
+        .get(&url)
+        .query(&[("mints", mint)])
+        .send()
+        .await?
+        .json()
+        .await?;
+    if let Some(decimals) = resp["data"][0]["decimals"].as_u64() {
+        return Ok(decimals as u8);
+    }
+    anyhow::bail!(
+        "Could not resolve decimals for mint '{}'. Pass amount in raw base units or use a known mint.",
+        mint
+    )
+}
+
 pub async fn execute(args: &SwapArgs, dry_run: bool) -> Result<()> {
     // Validate mint addresses before any API calls
     crate::config::validate_solana_address(&args.input_mint)?;
     crate::config::validate_solana_address(&args.output_mint)?;
 
-    // dry_run guard — must come before resolve_wallet_solana()
+    let client = reqwest::Client::new();
+
+    // Resolve input token decimals and parse human-readable amount to raw u64
+    let input_decimals = resolve_decimals(&args.input_mint, &client).await?;
+    let raw_amount = parse_human_amount(&args.amount, input_decimals)?;
+
+    // dry_run guard - must come before resolve_wallet_solana()
     if dry_run {
         println!(
             "{}",
@@ -72,6 +105,7 @@ pub async fn execute(args: &SwapArgs, dry_run: bool) -> Result<()> {
                 "inputMint": args.input_mint,
                 "outputMint": args.output_mint,
                 "amount": args.amount,
+                "rawAmount": raw_amount,
                 "slippageBps": args.slippage_bps,
                 "note": "dry_run: tx not built or broadcast"
             }))?
@@ -85,12 +119,12 @@ pub async fn execute(args: &SwapArgs, dry_run: bool) -> Result<()> {
     } else {
         let w = onchainos::resolve_wallet_solana()?;
         if w.is_empty() {
-            anyhow::bail!("Could not resolve wallet address. Pass --from or ensure onchainos is logged in.");
+            anyhow::bail!(
+                "Could not resolve wallet address. Pass --from or ensure onchainos is logged in."
+            );
         }
         w
     };
-
-    let client = reqwest::Client::new();
 
     // Step 1: Get swap quote
     let quote_url = format!("{}/compute/swap-base-in", TX_API_BASE);
@@ -99,7 +133,7 @@ pub async fn execute(args: &SwapArgs, dry_run: bool) -> Result<()> {
         .query(&[
             ("inputMint", args.input_mint.as_str()),
             ("outputMint", args.output_mint.as_str()),
-            ("amount", &args.amount.to_string()),
+            ("amount", &raw_amount.to_string()),
             ("slippageBps", &args.slippage_bps.to_string()),
             ("txVersion", args.tx_version.as_str()),
         ])
@@ -133,7 +167,7 @@ pub async fn execute(args: &SwapArgs, dry_run: bool) -> Result<()> {
         );
     }
 
-    // Step 2: Build serialized transaction — must submit immediately after (blockhash ~60s)
+    // Step 2: Build serialized transaction - must submit immediately after (blockhash ~60s)
     let tx_url = format!("{}/transaction/swap-base-in", TX_API_BASE);
     let tx_body = serde_json::json!({
         "swapResponse": quote_resp,
@@ -174,8 +208,9 @@ pub async fn execute(args: &SwapArgs, dry_run: bool) -> Result<()> {
             .ok_or_else(|| anyhow::anyhow!("Missing 'transaction' field in tx item"))?;
 
         let broadcast_result =
-            onchainos::wallet_contract_call_solana(RAYDIUM_AMM_PROGRAM, serialized_tx, false).await?;
-        let tx_hash = onchainos::extract_tx_hash(&broadcast_result);
+            onchainos::wallet_contract_call_solana(RAYDIUM_AMM_PROGRAM, serialized_tx, false)
+                .await?;
+        let tx_hash = onchainos::extract_tx_hash(&broadcast_result)?;
         results.push(serde_json::json!({
             "txHash": tx_hash,
             "broadcastResult": broadcast_result,
@@ -187,6 +222,7 @@ pub async fn execute(args: &SwapArgs, dry_run: bool) -> Result<()> {
         "inputMint": args.input_mint,
         "outputMint": args.output_mint,
         "amount": args.amount,
+        "rawAmount": raw_amount,
         "outputAmount": quote_resp["data"]["outputAmount"],
         "priceImpactPct": price_impact,
         "transactions": results,

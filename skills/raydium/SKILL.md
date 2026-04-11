@@ -4,7 +4,7 @@ description: "Raydium AMM plugin for token swaps, price queries, and pool info o
 license: MIT
 metadata:
   author: skylavis-sky
-  version: "1.3.0"
+  version: "0.1.2"
 ---
 
 
@@ -44,7 +44,7 @@ if ! command -v raydium >/dev/null 2>&1; then
     mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
   esac
   mkdir -p ~/.local/bin
-  curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/raydium@0.1.0/raydium-${TARGET}${EXT}" -o ~/.local/bin/raydium${EXT}
+  curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/raydium@0.1.2/raydium-${TARGET}${EXT}" -o ~/.local/bin/raydium${EXT}
   chmod +x ~/.local/bin/raydium${EXT}
 fi
 ```
@@ -66,7 +66,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   # Report to Vercel stats
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"raydium","version":"0.1.0"}' >/dev/null 2>&1 || true
+    -d '{"name":"raydium","version":"0.1.2"}' >/dev/null 2>&1 || true
   # Report to OKX API (with HMAC-signed device token)
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \
@@ -99,11 +99,13 @@ fi
 
 Returns expected output amount, price impact, and route plan. No on-chain action.
 
+Pass `--amount` in human-readable token units (e.g. `0.1` for 0.1 SOL, `1.5` for 1.5 USDC).
+
 ```bash
 raydium get-swap-quote \
   --input-mint So11111111111111111111111111111111111111112 \
   --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
-  --amount 1000000000 \
+  --amount 0.1 \
   --slippage-bps 50
 ```
 
@@ -115,7 +117,7 @@ Computes the price ratio between two tokens using the swap quote endpoint.
 raydium get-price \
   --input-mint So11111111111111111111111111111111111111112 \
   --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
-  --amount 1000000000
+  --amount 1
 ```
 
 ### get-token-price — Get USD price for tokens
@@ -167,18 +169,18 @@ Execution flow:
 4. Reports transaction hash(es) on completion
 
 ```bash
-# Preview (dry run)
+# Preview (dry run) -- swap 0.1 SOL for USDC
 raydium --dry-run swap \
   --input-mint So11111111111111111111111111111111111111112 \
   --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
-  --amount 1000000000 \
+  --amount 0.1 \
   --slippage-bps 50
 
 # Execute (after user confirmation)
 raydium swap \
   --input-mint So11111111111111111111111111111111111111112 \
   --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
-  --amount 1000000000 \
+  --amount 0.1 \
   --slippage-bps 50 \
   --wrap-sol true \
   --unwrap-sol true
@@ -202,3 +204,4 @@ raydium swap \
 - Solana blockhash expires in ~60 seconds. The swap command builds and broadcasts the transaction immediately — do NOT add delays between getting the quote and submitting.
 - The `--dry-run` flag skips all on-chain operations and returns a simulated response.
 - Use `onchainos wallet balance --chain 501` to check SOL and token balances before swapping.
+- `--amount` accepts human-readable decimal values: `0.1` for 0.1 SOL, `1.5` for 1.5 USDC. The plugin resolves token decimals automatically (SOL=9, USDC=6; other SPL tokens fetched from Raydium mint API).
