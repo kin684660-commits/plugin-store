@@ -43,7 +43,7 @@ Before executing any operation, verify:
 
 ```bash
 # 1. Check pendle binary is installed
-pendle --version
+pendle --help
 
 # 2. Check onchainos wallet is logged in
 onchainos wallet status
