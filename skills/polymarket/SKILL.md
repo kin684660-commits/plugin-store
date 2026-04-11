@@ -1,7 +1,7 @@
 ---
 name: polymarket
 description: "Trade prediction markets on Polymarket - buy outcome tokens (YES/NO and categorical markets), check positions, list markets, and manage orders on Polygon. Trigger phrases: buy polymarket shares, sell polymarket position, check my polymarket positions, list polymarket markets, get polymarket market, cancel polymarket order, polymarket yes token, polymarket no token, prediction market trade, polymarket price."
-version: "0.2.0"
+version: "0.2.3"
 author: "skylavis-sky"
 tags:
   - prediction-market
@@ -48,7 +48,7 @@ if ! command -v polymarket >/dev/null 2>&1; then
     mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
   esac
   mkdir -p ~/.local/bin
-  curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/polymarket@0.2.0/polymarket-${TARGET}${EXT}" -o ~/.local/bin/polymarket${EXT}
+  curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/polymarket@0.2.3/polymarket-${TARGET}${EXT}" -o ~/.local/bin/polymarket${EXT}
   chmod +x ~/.local/bin/polymarket${EXT}
 fi
 ```
@@ -67,7 +67,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   unset _K
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"polymarket","version":"0.2.0"}' >/dev/null 2>&1 || true
+    -d '{"name":"polymarket","version":"0.2.1"}' >/dev/null 2>&1 || true
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \
     -d '{"pluginName":"polymarket","divId":"'"$DIV_ID"'"}' >/dev/null 2>&1 || true
@@ -141,7 +141,7 @@ Polymarket is a prediction market platform on Polygon where users trade outcome 
 polymarket --version
 ```
 
-Expected: `polymarket 0.2.0`. If missing or wrong version, run the install script in **Pre-flight Dependencies** above.
+Expected: `polymarket 0.2.3`. If missing or wrong version, run the install script in **Pre-flight Dependencies** above.
 
 ### Step 2 — Install `onchainos` CLI (required for buy/sell/cancel only)
 
@@ -280,7 +280,9 @@ polymarket buy --market-id <id> --outcome <outcome> --amount <usdc> [--price <0-
 
 > ⚠️ **Approval notice**: Before each buy, the plugin checks the current USDC.e allowance and, if insufficient, submits an `approve(exchange, amount)` transaction for **exactly the order amount** — no more. This fires automatically with no additional onchainos confirmation gate. **Agent confirmation before calling `buy` is the sole safety gate for this approval.**
 
-**Amount encoding:** USDC.e amounts are 6-decimal (multiply by 1,000,000 internally). Price must be rounded to tick size (typically 0.01).
+**Amount encoding:** USDC.e amounts are 6-decimal. Order amounts are computed using GCD-based integer arithmetic to guarantee `maker_raw / taker_raw == price` exactly — Polymarket requires maker (USDC) accurate to 2 decimal places and taker (shares) to 4 decimal places, and floating-point rounding of either independently breaks the price ratio and causes API rejection.
+
+> ⚠️ **Minimum order size**: Before placing (or dry-running) an order, the plugin fetches `min_order_size` from the market's order book. If `--amount` is below that minimum, the command exits with an error stating the required minimum. This check applies even in `--dry-run` mode.
 
 > ⚠️ **Market order slippage**: When `--price` is omitted, the order is a FOK (fill-or-kill) market order that fills at the best available price from the order book. On low-liquidity markets or large order sizes, this price may be significantly worse than the mid-price. Recommend using `--price` (limit order) for amounts above $10 to control slippage.
 
@@ -326,6 +328,52 @@ polymarket sell --market-id <id> --outcome <outcome> --shares <amount> [--price 
 polymarket sell --market-id will-btc-hit-100k-by-2025 --outcome yes --shares 100 --price 0.72
 polymarket sell --market-id 0xabc... --outcome no --shares 50
 ```
+
+---
+
+### Pre-sell Liquidity Check (Required Agent Step)
+
+**Before calling `sell`, you MUST call `get-market` and assess liquidity for the outcome being sold.**
+
+```bash
+polymarket get-market --market-id <id>
+```
+
+Find the token matching the outcome being sold in the `tokens[]` array. Extract:
+- `best_bid` — current highest buy offer for that outcome
+- `best_ask` — current lowest sell offer  
+- `last_trade` — price of the most recent trade
+- Market-level `liquidity` — total USD locked in the market
+
+**Warn the user and ask for explicit confirmation before proceeding if ANY of the following apply:**
+
+| Signal | Threshold | What to tell the user |
+|--------|-----------|----------------------|
+| No buyers | `best_bid` is null or `0` | "There are no active buyers for this outcome. Your sell order may not fill." |
+| Price collapsed | `best_bid < 0.5 × last_trade` | "The best bid ($B) is less than 50% of the last traded price ($L). You would be selling at a significant loss from recent prices." |
+| Wide spread | `best_ask − best_bid > 0.15` | "The bid-ask spread is wide ($spread), indicating thin liquidity. You may get a poor fill price." |
+| Thin market | `liquidity < 1000` | "This market has very low total liquidity ($X USD). Large sells will have high price impact." |
+
+**When warning, always show the user:**
+1. Current `best_bid`, `last_trade`, and market `liquidity`
+2. Estimated USDC received: `shares × best_bid` (before fees)
+3. A clear question: *"Market liquidity looks poor. Estimated receive: $Y for [N] shares at [best_bid]. Do you want to proceed?"*
+
+Only call `sell` after the user explicitly confirms they want to proceed.
+
+**If `--price` is provided by the user**, skip this check — the user has already set their acceptable price.
+
+---
+
+### Safety Guards
+
+One runtime guard built into the binary protects against order parameter mistakes:
+
+| Guard | Command | Trigger | Behaviour |
+|-------|---------|---------|-----------|
+| Minimum order size | `buy` | `--amount` is below the market's `min_order_size` | Command exits with an error stating the required minimum. Applies even in `--dry-run` mode. |
+
+Liquidity protection for `sell` is handled at the agent level via the **Pre-sell Liquidity Check** above.
 
 ---
 
@@ -441,3 +489,19 @@ Some markets (multi-outcome events) use `neg_risk: true`. For these:
 | Geopolitics | 0% |
 
 Fees are deducted by the exchange from the received amount. The `feeRateBps` field in signed orders is fetched per-market from Polymarket's `maker_base_fee` (e.g. 1000 bps = 10% for some sports markets). The plugin handles this automatically.
+
+---
+
+## Changelog
+
+### v0.2.3 (2026-04-11)
+
+- **fix**: GCD amount arithmetic now uses `tick_scale = round(1/tick_size)` instead of hardcoded `100`. Fixes "breaks minimum tick size rule" rejections on markets with tick_size=0.001 (e.g. very low-probability political markets). Affected both buy and sell order construction.
+- **fix**: `sell` command now uses the same GCD-based integer arithmetic as `buy` — previously used independent `round_size_down` + `round_amount_down` which could produce a maker/taker ratio that didn't equal the price exactly, causing API rejection.
+
+### v0.2.2 (2026-04-11)
+
+- **feat**: Minimum order size guard — fetches `min_order_size` from order book before placing; prints actionable error and exits with code 1 if amount is below market minimum.
+- **fix**: Order book iteration corrected — CLOB API returns bids ascending (best=last) and asks descending (best=last); was previously iterating from worst price causing market orders to be priced at 0.01/0.99.
+- **fix**: GCD-based integer arithmetic for buy order amounts — guarantees `maker_raw / taker_raw == price` exactly, eliminating "invalid amounts" rejections caused by independent floating-point rounding.
+- **feat (SKILL)**: Pre-sell liquidity check — agent must inspect `get-market` output for null best_bid, collapsed price (< 50% of last trade), wide spread (> 0.15), or thin market (< $1,000 liquidity) and warn user before executing sell.
