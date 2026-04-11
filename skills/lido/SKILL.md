@@ -358,3 +358,4 @@ After **claim-withdrawal**: suggest checking ETH balance via `onchainos wallet b
 - Always verify transaction amounts and addresses before confirming
 - DeFi protocols carry smart contract risk — only use funds you can afford to lose
 
+
