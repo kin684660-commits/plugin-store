@@ -54,10 +54,15 @@ pub async fn wallet_contract_call(
     }
     let output = Command::new("onchainos").args(&args).output()?;
     let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(serde_json::from_str(&stdout).unwrap_or_else(|_| serde_json::json!({
+    let v: Value = serde_json::from_str(&stdout).unwrap_or_else(|_| serde_json::json!({
         "ok": false,
         "error": stdout.to_string()
-    })))
+    }));
+    if v.get("ok").and_then(|b| b.as_bool()) == Some(false) {
+        let msg = v.get("error").and_then(|e| e.as_str()).unwrap_or("unknown onchainos error");
+        anyhow::bail!("onchainos error: {}", msg);
+    }
+    Ok(v)
 }
 
 /// Extract txHash from wallet contract-call response: data.txHash
@@ -72,6 +77,12 @@ pub fn extract_tx_hash(result: &Value) -> &str {
 /// return Err if the receipt shows status 0x0 (reverted). This prevents
 /// false-success reporting when a broadcast tx reverts on-chain.
 pub async fn wait_and_check_receipt(tx_hash: &str, rpc_url: &str) -> anyhow::Result<()> {
+    if !tx_hash.starts_with("0x") || tx_hash.len() < 10 {
+        anyhow::bail!(
+            "Transaction was not broadcast (invalid tx hash: '{}').",
+            tx_hash
+        );
+    }
     let client = reqwest::Client::new();
     let body = serde_json::json!({
         "jsonrpc": "2.0",
@@ -177,6 +188,23 @@ mod tests {
     fn extract_tx_hash_missing_falls_back_to_pending() {
         let v = serde_json::json!({"ok": false});
         assert_eq!(extract_tx_hash(&v), "pending");
+    }
+
+    /// If onchainos returns ok:false (simulation rejection), wait_and_check_receipt
+    /// must immediately fail rather than polling and timing out as a soft-success.
+    #[tokio::test]
+    async fn receipt_pending_hash_returns_err() {
+        let result = wait_and_check_receipt("pending", BSC_RPC).await;
+        assert!(
+            result.is_err(),
+            "Expected Err for 'pending' hash but got Ok — ok:false path would silently succeed"
+        );
+    }
+
+    #[tokio::test]
+    async fn receipt_empty_hash_returns_err() {
+        let result = wait_and_check_receipt("", BSC_RPC).await;
+        assert!(result.is_err());
     }
 }
 
