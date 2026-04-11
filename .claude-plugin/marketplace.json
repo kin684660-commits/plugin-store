@@ -107,7 +107,7 @@
     },
     {
       "name": "meteora",
-      "description": "Meteora DLMM plugin for searching pools, getting swap quotes, checking positions, and executing swaps on Solana",
+      "description": "Meteora DLMM plugin for searching pools, getting swap quotes, checking positions, executing swaps, and adding liquidity on Solana",
       "source": "./skills/meteora",
       "category": "utility",
       "author": {
