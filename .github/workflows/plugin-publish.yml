@@ -556,11 +556,17 @@ jobs:
                   LATEST_YAML_VER=$(git show origin/main:skills/${NAME}/plugin.yaml 2>/dev/null | grep '^version' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 
                   if [ -n "$LATEST_CARGO_VER" ] && [ -n "$LATEST_YAML_VER" ] && [ "$LATEST_CARGO_VER" = "$LATEST_YAML_VER" ] && [ "$LATEST_CARGO_VER" != "$BIN_VERSION" ]; then
-                    # Latest main has matching versions but different from what we built.
-                    # This binary is stale. Auto-trigger rebuild by touching SKILL.md.
-                    echo "::warning::Binary ${BIN_VERSION} is stale. Latest main has ${LATEST_CARGO_VER}. Auto-triggering rebuild..."
+                    # Check if this run was ALREADY triggered by an auto-rebuild.
+                    # If so, don't retry again — prevents infinite loop.
+                    LAST_COMMIT_MSG=$(git log -1 --pretty=%s 2>/dev/null || echo "")
+                    if echo "$LAST_COMMIT_MSG" | grep -q "^auto: trigger ${NAME} rebuild"; then
+                      echo "::error::Binary ${BIN_VERSION} still stale after auto-rebuild. Manual fix needed: ensure Cargo.toml version matches plugin.yaml (${LATEST_YAML_VER})."
+                      cd "$REPO_ROOT"
+                      continue
+                    fi
 
-                    # Push a trivial change to trigger a new Phase 5 run with latest code
+                    # First time: auto-trigger rebuild
+                    echo "::warning::Binary ${BIN_VERSION} is stale. Latest main has ${LATEST_CARGO_VER}. Auto-triggering rebuild (one-time)..."
                     git fetch origin main 2>/dev/null || true
                     git checkout origin/main -- "skills/${NAME}/SKILL.md" 2>/dev/null || true
                     echo "" >> "${REPO_ROOT}/skills/${NAME}/SKILL.md"
