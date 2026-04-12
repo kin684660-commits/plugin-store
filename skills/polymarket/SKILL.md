@@ -133,6 +133,61 @@ Polymarket is a prediction market platform on Polygon where users trade outcome 
 
 ---
 
+## Quickstart
+
+New to Polymarket? Follow these 3 steps to go from zero to placing your first trade.
+
+### Step 1 — Connect your wallet
+
+Polymarket trades are signed by an [onchainos](https://github.com/okx/onchainos) agentic wallet on Polygon. If you haven't set one up yet:
+
+```bash
+# Check if a wallet is already connected
+onchainos wallet status
+
+# If not connected, log in (follow the prompts)
+onchainos wallet login
+
+# Confirm your Polygon address is active
+onchainos wallet addresses --chain 137
+```
+
+Your wallet address is your Polymarket identity — all orders are signed from it, and your positions are attached to it. No Polymarket account or web UI sign-up needed.
+
+### Step 2 — Top up USDC.e on Polygon
+
+Polymarket uses **USDC.e** (bridged USDC) on Polygon as collateral. Check your balance:
+
+```bash
+onchainos wallet balance --chain 137
+```
+
+Look for `USDC.e` (contract `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`). If your balance is zero or insufficient:
+
+- **From another chain**: bridge USDC to Polygon via the [OKX Web3 bridge](https://www.okx.com/web3/bridge) or [Polygon Bridge](https://portal.polygon.technology/)
+- **From a CEX**: withdraw USDC to your Polygon address via the Polygon network
+- **Minimum suggested**: $5–$10 to cover a small test trade plus gas (Polygon gas is cheap, typically < $0.01 per tx)
+
+### Step 3 — Find a market and place a trade
+
+```bash
+# Browse active markets (no wallet needed)
+polymarket list-markets --keyword "trump"
+
+# Get details on a specific market
+polymarket get-market --market-id will-trump-win-2024
+
+# Buy $5 of YES shares at market price
+polymarket buy --market-id will-trump-win-2024 --outcome yes --amount 5
+
+# Check your open positions
+polymarket get-positions
+```
+
+The first `buy` or `sell` automatically derives your Polymarket API credentials from your wallet and caches them — no manual setup required.
+
+---
+
 ## Pre-flight Checks
 
 ### Step 1 — Verify `polymarket` binary
