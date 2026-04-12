@@ -110,12 +110,6 @@ Do NOT use for: PancakeSwap V3 simple swaps without farming (use pancakeswap ski
 | `--dry-run` | Show calldata and parameters without broadcasting or prompting | false |
 | `--rpc-url <url>` | Override the default public RPC endpoint (use when the default is rate-limited or unavailable) | see config |
 
-**Block explorers for transaction tracking after write operations:**
-- BSC: `https://bscscan.com/tx/<txHash>`
-- Ethereum: `https://etherscan.io/tx/<txHash>`
-- Base: `https://basescan.org/tx/<txHash>`
-- Arbitrum: `https://arbiscan.io/tx/<txHash>`
-
 ## Relationship with `pancakeswap` Plugin
 
 This plugin focuses on **MasterChefV3 farming** and is complementary to the `pancakeswap` plugin (PR #82):
