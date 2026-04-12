@@ -27,6 +27,8 @@ pub async fn run(
     order_type: &str,
     auto_approve: bool,
     dry_run: bool,
+    post_only: bool,
+    expires: Option<u64>,
     confirm: bool,
 ) -> Result<()> {
     if dry_run {
@@ -68,6 +70,28 @@ pub async fn run(
     if share_amount <= 0.0 {
         bail!("shares must be positive");
     }
+
+    // Validate --post-only / --expires up front.
+    // GTD requires an expiration; --expires auto-selects order_type GTD.
+    // FOK is always a taker and incompatible with --post-only.
+    if post_only && order_type.to_uppercase() == "FOK" {
+        bail!("--post-only is incompatible with --order-type FOK: FOK orders are always takers");
+    }
+    if order_type.to_uppercase() == "GTD" && expires.is_none() {
+        bail!("--order-type GTD requires --expires <unix_timestamp>");
+    }
+    let (expiration, effective_order_type) = if let Some(ts) = expires {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        if ts < now + 90 {
+            bail!("--expires must be at least 90 seconds in the future (got {ts}, now {now})");
+        }
+        (ts, "GTD")
+    } else {
+        (0, order_type)
+    };
 
     // Determine price
     let limit_price = if let Some(p) = price {
@@ -142,7 +166,7 @@ pub async fn run(
         token_id: token_id.clone(),
         maker_amount: maker_amount_raw as u64,
         taker_amount: taker_amount_raw as u64,
-        expiration: 0,
+        expiration,
         nonce: 0,
         fee_rate_bps,
         side: 1, // SELL
@@ -159,7 +183,7 @@ pub async fn run(
         token_id: token_id.clone(),
         maker_amount: maker_amount_raw.to_string(),
         taker_amount: taker_amount_raw.to_string(),
-        expiration: "0".to_string(),
+        expiration: expiration.to_string(),
         nonce: "0".to_string(),
         fee_rate_bps: fee_rate_bps.to_string(),
         side: "SELL".to_string(),
@@ -170,14 +194,20 @@ pub async fn run(
     let order_req = OrderRequest {
         order: order_body,
         owner: creds.api_key.clone(),
-        order_type: order_type.to_uppercase(),
-        post_only: false,
+        order_type: effective_order_type.to_uppercase(),
+        post_only,
     };
 
     let resp = post_order(&client, &signer_addr, &creds, &order_req).await?;
 
     if resp.success != Some(true) {
         let msg = resp.error_msg.as_deref().unwrap_or("unknown error");
+        if msg.to_uppercase().contains("INVALID_ORDER_MIN_SIZE") {
+            bail!(
+                "Order rejected by CLOB: amount is below this market's minimum order size. \
+                 Try a larger amount."
+            );
+        }
         bail!("Order placement failed: {}", msg);
     }
 
@@ -190,12 +220,14 @@ pub async fn run(
             "outcome": outcome,
             "token_id": token_id,
             "side": "SELL",
-            "order_type": order_type.to_uppercase(),
+            "order_type": effective_order_type.to_uppercase(),
             "limit_price": limit_price,
             "shares": maker_amount_raw as f64 / 1_000_000.0,
             "usdc_out": taker_amount_raw as f64 / 1_000_000.0,
             "maker_amount_raw": maker_amount_raw,
             "taker_amount_raw": taker_amount_raw,
+            "post_only": post_only,
+            "expires": if expiration > 0 { serde_json::Value::Number(expiration.into()) } else { serde_json::Value::Null },
             "tx_hashes": resp.tx_hashes,
         }
     });

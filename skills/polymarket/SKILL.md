@@ -1,7 +1,7 @@
 ---
 name: polymarket
 description: "Trade prediction markets on Polymarket - buy outcome tokens (YES/NO and categorical markets), check positions, list markets, and manage orders on Polygon. Trigger phrases: buy polymarket shares, sell polymarket position, check my polymarket positions, list polymarket markets, get polymarket market, cancel polymarket order, polymarket yes token, polymarket no token, prediction market trade, polymarket price."
-version: "0.2.3"
+version: "0.2.4"
 author: "skylavis-sky"
 tags:
   - prediction-market
@@ -48,7 +48,7 @@ if ! command -v polymarket >/dev/null 2>&1; then
     mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
   esac
   mkdir -p ~/.local/bin
-  curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/polymarket@0.2.3/polymarket-${TARGET}${EXT}" -o ~/.local/bin/polymarket${EXT}
+  curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/polymarket@0.2.4/polymarket-${TARGET}${EXT}" -o ~/.local/bin/polymarket${EXT}
   chmod +x ~/.local/bin/polymarket${EXT}
 fi
 ```
@@ -141,7 +141,7 @@ Polymarket is a prediction market platform on Polygon where users trade outcome 
 polymarket --version
 ```
 
-Expected: `polymarket 0.2.3`. If missing or wrong version, run the install script in **Pre-flight Dependencies** above.
+Expected: `polymarket 0.2.4`. If missing or wrong version, run the install script in **Pre-flight Dependencies** above.
 
 ### Step 2 — Install `onchainos` CLI (required for buy/sell/cancel only)
 
@@ -261,7 +261,7 @@ polymarket get-positions --address 0xAbCd...
 ### `buy` — Buy Outcome Shares
 
 ```
-polymarket buy --market-id <id> --outcome <outcome> --amount <usdc> [--price <0-1>] [--order-type <GTC|FOK>] [--approve]
+polymarket buy --market-id <id> --outcome <outcome> --amount <usdc> [--price <0-1>] [--order-type <GTC|FOK>] [--approve] [--round-up]
 ```
 
 **Flags:**
@@ -273,6 +273,9 @@ polymarket buy --market-id <id> --outcome <outcome> --amount <usdc> [--price <0-
 | `--price` | Limit price in (0, 1). Omit for market order (FOK) | — |
 | `--order-type` | `GTC` (resting limit) or `FOK` (fill-or-kill) | `GTC` |
 | `--approve` | Force USDC.e approval before placing | false |
+| `--round-up` | If amount is too small for divisibility constraints, snap up to the minimum valid amount rather than erroring. Logs the rounded amount to stderr and includes `rounded_up: true` in output. | false |
+| `--post-only` | Maker-only: reject if the order would immediately cross the spread (become a taker). Requires `--order-type GTC`. Qualifies for Polymarket maker rebates (up to 50% of fees returned daily). Incompatible with `--order-type FOK`. | false |
+| `--expires` | Unix timestamp (seconds, UTC) at which the order auto-cancels. Minimum 90 seconds in the future (CLOB enforces a "now + 1 min 30 s" security threshold). Automatically sets `order_type` to `GTD` (Good Till Date) — do not also pass `--order-type GTC`. Example: `--expires $(date -d '+1 hour' +%s)` | — |
 
 **Auth required:** Yes — onchainos wallet; EIP-712 order signing via `onchainos sign-message --type eip712`
 
@@ -282,7 +285,26 @@ polymarket buy --market-id <id> --outcome <outcome> --amount <usdc> [--price <0-
 
 **Amount encoding:** USDC.e amounts are 6-decimal. Order amounts are computed using GCD-based integer arithmetic to guarantee `maker_raw / taker_raw == price` exactly — Polymarket requires maker (USDC) accurate to 2 decimal places and taker (shares) to 4 decimal places, and floating-point rounding of either independently breaks the price ratio and causes API rejection.
 
-> ⚠️ **Minimum order size**: Before placing (or dry-running) an order, the plugin fetches `min_order_size` from the market's order book. If `--amount` is below that minimum, the command exits with an error stating the required minimum. This check applies even in `--dry-run` mode.
+> ⚠️ **Minimum order size — `min_order_size` API field is unreliable**: The `min_order_size` field returned by the CLOB order book API (e.g. `"5"`) is informational only and is **not enforced** by the CLOB. Do not use it to pre-validate or gate orders, and **never auto-escalate a user's order amount based on this field**.
+>
+> There are two independent minimums that can reject a small order. Collapse them into **one user prompt** rather than asking twice:
+>
+> | Minimum | Source | Applies to |
+> |---------|--------|------------|
+> | Divisibility minimum (price-dependent, e.g. ~$0.61 at price 0.61) | Plugin zero-amount guard | All order types |
+> | CLOB execution floor (~$1) | Exchange runtime for "marketable" orders | Market (FOK) orders and GTC limit orders priced at or above the best ask |
+>
+> **Agent flow when the divisibility guard fires:**
+> 1. Compute the divisibility minimum from the error (`"Minimum for this market/price is ~$X"`).
+> 2. If `--price` was **omitted** (market/FOK order), also note the CLOB's ~$1 floor and present both constraints to the user in a **single message** with two genuine options:
+>    - **(a) $1.00 market order** — fills immediately at the best available price
+>    - **(b) Resting limit below the current ask** (e.g. `--price 0.60`) — avoids the $1 CLOB floor, so the divisibility minimum (~$0.61) is sufficient; but the order only fills if the market price drifts down to your limit
+>
+>    Example: *"$0.48 at price 0.61 rounds to a minimum of $0.61, and market orders also require at least $1 from the exchange. Options: (a) place $1.00 for an immediate fill, or (b) place $0.61 as a resting limit at 0.60 — it won't fill instantly but avoids the $1 floor. Which would you prefer?"*
+>
+>    **Do not offer a GTC limit at the current ask price as a third option** — a limit priced at or above the best ask is still marketable and hits the same $1 floor, so it is equivalent to option (a) and would confuse the user.
+> 3. If `--price` was **provided** at a level below the current best ask (resting limit), only the divisibility minimum applies — ask once: *"Minimum for this price is $X. Place $X instead?"* and retry with `--round-up` on confirmation.
+> 4. Never autonomously choose a higher amount without explicit user confirmation.
 
 > ⚠️ **Market order slippage**: When `--price` is omitted, the order is a FOK (fill-or-kill) market order that fills at the best available price from the order book. On low-liquidity markets or large order sizes, this price may be significantly worse than the mid-price. Recommend using `--price` (limit order) for amounts above $10 to control slippage.
 
@@ -312,6 +334,8 @@ polymarket sell --market-id <id> --outcome <outcome> --shares <amount> [--price 
 | `--price` | Limit price in (0, 1). Omit for market order (FOK) | — |
 | `--order-type` | `GTC` (resting limit) or `FOK` (fill-or-kill) | `GTC` |
 | `--approve` | Force CTF token approval before placing | false |
+| `--post-only` | Maker-only: reject if the order would immediately cross the spread. Requires `--order-type GTC`. Qualifies for maker rebates. Incompatible with `--order-type FOK`. | false |
+| `--expires` | Unix timestamp (seconds, UTC) at which the order auto-cancels. Minimum 90 seconds in the future. Auto-sets `order_type` to `GTD`. | — |
 
 **Auth required:** Yes — onchainos wallet; EIP-712 order signing via `onchainos sign-message --type eip712`
 
@@ -367,11 +391,14 @@ Only call `sell` after the user explicitly confirms they want to proceed.
 
 ### Safety Guards
 
-One runtime guard built into the binary protects against order parameter mistakes:
+Runtime guards built into the binary:
 
 | Guard | Command | Trigger | Behaviour |
 |-------|---------|---------|-----------|
-| Minimum order size | `buy` | `--amount` is below the market's `min_order_size` | Command exits with an error stating the required minimum. Applies even in `--dry-run` mode. |
+| Zero-amount divisibility | `buy` | USDC amount rounds to 0 shares after GCD alignment (too small for the given price) | Exits early with error and computed minimum viable amount. No approval tx fired. |
+| Zero-amount divisibility | `sell` | Share amount rounds to 0 USDC after GCD alignment | Exits early with error and computed minimum viable amount. No approval tx fired. |
+
+**Agent behaviour on size errors**: When either guard fires, or when the CLOB rejects with a minimum-size error, **do not autonomously retry with a higher amount**. Surface the error and minimum to the user and ask for explicit confirmation before retrying. If the user agrees to the rounded-up amount, retry with `--round-up` — the binary will handle the rounding and log it to stderr. The `min_order_size` field in the API response is unreliable and must never be used as a basis for auto-escalating order size.
 
 Liquidity protection for `sell` is handled at the agent level via the **Pre-sell Liquidity Check** above.
 
@@ -472,8 +499,9 @@ export POLYMARKET_PASSPHRASE=<passphrase>
 ## Notes on Neg Risk Markets
 
 Some markets (multi-outcome events) use `neg_risk: true`. For these:
-- The **Neg Risk CTF Exchange** (`0xC5d563A36AE78145C45a50134d48A1215220f80a`) is used for order signing and approvals
-- The plugin handles this automatically based on the `neg_risk` field returned by market lookup APIs
+- The **Neg Risk CTF Exchange** (`0xC5d563A36AE78145C45a50134d48A1215220f80a`) and **Neg Risk Adapter** (`0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296`) are both used — the CLOB checks USDC allowance on both contracts
+- On `buy`, the plugin automatically approves both contracts when allowance is insufficient; the allowance check takes the minimum across both
+- The plugin handles all of this automatically based on the `neg_risk` field returned by market lookup APIs
 - Token IDs and prices function identically from the user's perspective
 
 ---
@@ -494,10 +522,23 @@ Fees are deducted by the exchange from the received amount. The `feeRateBps` fie
 
 ## Changelog
 
-### v0.2.3 (2026-04-11)
+### v0.2.4 (2026-04-12)
+
+- **feat**: `buy --round-up` flag — when the requested amount is too small to satisfy Polymarket's divisibility constraints at the given price, snaps up to the nearest valid minimum instead of erroring. Logs the rounded amount to stderr; output JSON includes `rounded_up: true` and both `usdc_requested` and `usdc_amount` fields for transparency.
+- **fix (SKILL)**: Agent flow for small-amount errors now collapses two independent minimums (divisibility guard and CLOB FOK floor) into a single user prompt. For market orders, agent presents both constraints together and offers the choice between a $1 market order or a resting limit order below the spread (which avoids the $1 CLOB floor). Agents must never autonomously choose a higher amount.
+- **feat**: `buy --post-only` and `sell --post-only` — maker-only flag; rejects order if it would immediately cross the spread. Incompatible with FOK. Qualifies for Polymarket's maker rebates program (20–50% of fees returned daily).
+- **feat**: `buy --expires <unix_ts>` and `sell --expires <unix_ts>` — GTD (Good Till Date) orders that auto-cancel at the given timestamp. Minimum 90 seconds in the future (CLOB enforces "now + 1 min 30 s" security threshold); automatically sets `order_type: GTD`. Both `expires` and `post_only` fields appear in command output.
+- **fix**: `buy` on `neg_risk: true` markets (multi-outcome: NBA Finals, World Cup winner, award markets, etc.) now works correctly. The CLOB checks USDC allowance on both `NEG_RISK_CTF_EXCHANGE` and `NEG_RISK_ADAPTER` for these markets — the plugin previously only approved `NEG_RISK_CTF_EXCHANGE`, causing "not enough allowance" rejections. Both contracts are now approved.
+- **fix**: `get-market` `best_bid` and `best_ask` fields now show the correct best price for each outcome token. The CLOB API returns bids in ascending order and asks in descending order — the previous `.first()` lookup was returning the worst price in the book rather than the best.
+- **fix**: GTD `--expires` minimum validation tightened from 60 s to 90 s to match the CLOB's actual "now + 1 minute + 30 seconds" security threshold, preventing runtime rejections.
+
+### v0.2.3 (2026-04-12)
 
 - **fix**: GCD amount arithmetic now uses `tick_scale = round(1/tick_size)` instead of hardcoded `100`. Fixes "breaks minimum tick size rule" rejections on markets with tick_size=0.001 (e.g. very low-probability political markets). Affected both buy and sell order construction.
 - **fix**: `sell` command now uses the same GCD-based integer arithmetic as `buy` — previously used independent `round_size_down` + `round_amount_down` which could produce a maker/taker ratio that didn't equal the price exactly, causing API rejection.
+- **fix**: Removed `min_order_size` pre-flight check from `buy` — the field returned by the CLOB API is unreliable (returns `"5"` uniformly regardless of actual enforcement) and was causing false rejections. The CLOB now speaks for itself via `INVALID_ORDER_MIN_SIZE` errors.
+- **fix**: Added zero-amount divisibility guard to `buy` (computed before approval tx) — catches orders that are mathematically too small to satisfy CLOB divisibility constraints at the given price, with a clear error and computed minimum viable amount.
+- **fix (SKILL)**: Clarified that `min_order_size` API field must never be used to auto-escalate order amounts; agents must surface size errors to the user and ask for explicit confirmation before retrying.
 
 ### v0.2.2 (2026-04-11)
 

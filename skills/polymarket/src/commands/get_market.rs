@@ -30,8 +30,9 @@ async fn run_by_condition_id(client: &Client, condition_id: &str) -> anyhow::Res
             "token_id": t.token_id,
             "price": t.price,
             "winner": t.winner,
-            "best_bid": book.as_ref().and_then(|b| b.bids.first()).map(|l| l.price.clone()),
-            "best_ask": book.as_ref().and_then(|b| b.asks.first()).map(|l| l.price.clone()),
+            // CLOB returns bids ascending (last = best bid) and asks descending (last = best ask)
+            "best_bid": book.as_ref().and_then(|b| b.bids.last()).map(|l| l.price.clone()),
+            "best_ask": book.as_ref().and_then(|b| b.asks.last()).map(|l| l.price.clone()),
             "last_trade": book.as_ref().and_then(|b| b.last_trade_price.clone()),
         }));
     }
@@ -70,8 +71,9 @@ async fn run_by_slug(client: &Client, slug: &str) -> anyhow::Result<serde_json::
             "outcome": sanitize_str(outcome),
             "token_id": token_id,
             "price": prices.get(i).cloned().unwrap_or_default(),
-            "best_bid": book.as_ref().and_then(|b| b.bids.first()).map(|l| l.price.clone()),
-            "best_ask": book.as_ref().and_then(|b| b.asks.first()).map(|l| l.price.clone()),
+            // CLOB returns bids ascending (last = best bid) and asks descending (last = best ask)
+            "best_bid": book.as_ref().and_then(|b| b.bids.last()).map(|l| l.price.clone()),
+            "best_ask": book.as_ref().and_then(|b| b.asks.last()).map(|l| l.price.clone()),
             "last_trade": book.as_ref().and_then(|b| b.last_trade_price.clone()),
         }));
     }

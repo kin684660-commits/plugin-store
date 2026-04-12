@@ -132,14 +132,21 @@ pub async fn ctf_set_approval_for_all(ctf_addr: &str, operator: &str) -> Result<
     extract_tx_hash(&result)
 }
 
-/// Approve a bounded USDC.e amount to CTF Exchange. Used before BUY orders.
-/// Approves exactly `amount` (the order's maker_amount raw units) to avoid granting
-/// unlimited spending power to the exchange contract.
+/// Approve USDC.e allowance before a BUY order.
+///
+/// For neg_risk=false: approves CTF Exchange only.
+/// For neg_risk=true: approves BOTH NEG_RISK_CTF_EXCHANGE and NEG_RISK_ADAPTER —
+/// the CLOB checks both contracts in the settlement path for neg_risk markets.
+/// Returns the tx hash of the last approval submitted.
 pub async fn approve_usdc(neg_risk: bool, amount: u64) -> Result<String> {
     use crate::config::Contracts;
     let usdc = Contracts::USDC_E;
-    let exchange = Contracts::exchange_for(neg_risk);
-    usdc_approve(usdc, exchange, amount as u128).await
+    if neg_risk {
+        usdc_approve(usdc, Contracts::NEG_RISK_CTF_EXCHANGE, amount as u128).await?;
+        usdc_approve(usdc, Contracts::NEG_RISK_ADAPTER, amount as u128).await
+    } else {
+        usdc_approve(usdc, Contracts::CTF_EXCHANGE, amount as u128).await
+    }
 }
 
 /// Approve CTF tokens for CTF Exchange. Used before SELL orders.

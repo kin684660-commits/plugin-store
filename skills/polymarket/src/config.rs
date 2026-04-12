@@ -96,6 +96,7 @@ impl Contracts {
             Self::CTF_EXCHANGE
         }
     }
+
 }
 
 /// Base URLs

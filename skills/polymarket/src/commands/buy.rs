@@ -3,7 +3,7 @@ use reqwest::Client;
 
 use crate::api::{
     compute_buy_worst_price, get_balance_allowance, get_clob_market, get_market_fee, get_orderbook,
-    get_tick_size, post_order, round_price, to_token_units,
+    get_tick_size, post_order, round_price,
     OrderBody, OrderRequest,
 };
 use crate::auth::ensure_credentials;
@@ -19,6 +19,9 @@ pub async fn run(
     order_type: &str,
     auto_approve: bool,
     dry_run: bool,
+    round_up: bool,
+    post_only: bool,
+    expires: Option<u64>,
 ) -> Result<()> {
     // Parse USDC amount early so we can enforce the minimum order size
     // check even on dry-run (the agent needs to know before placing).
@@ -27,34 +30,42 @@ pub async fn run(
         bail!("amount must be positive");
     }
 
+    // Validate --post-only / --expires up front (no network calls needed).
+    // GTD requires an expiration; --expires auto-selects order_type GTD.
+    // FOK is always a taker and incompatible with --post-only.
+    if post_only && order_type.to_uppercase() == "FOK" {
+        bail!("--post-only is incompatible with --order-type FOK: FOK orders are always takers");
+    }
+    if order_type.to_uppercase() == "GTD" && expires.is_none() {
+        bail!("--order-type GTD requires --expires <unix_timestamp>");
+    }
+    let (expiration, effective_order_type) = if let Some(ts) = expires {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        if ts < now + 90 {
+            bail!("--expires must be at least 90 seconds in the future (got {ts}, now {now})");
+        }
+        (ts, "GTD")
+    } else {
+        (0, order_type)
+    };
+
     let client = Client::new();
 
     // Resolve market (no auth required — public API)
     let (condition_id, token_id, neg_risk) =
         resolve_market_token(&client, market_id, outcome).await?;
 
-    // Fetch the order book to obtain min_order_size (and reuse for market orders later).
+    // Fetch the order book (reused for market price calculation below).
+    // Note: min_order_size is intentionally not enforced here — the CLOB API
+    // exposes this field but does not actually reject orders below it
+    // (confirmed by pre-v0.2.3 orders at $1 resolving normally). Polymarket's
+    // own official client likewise ignores this field. If the CLOB ever does
+    // enforce a minimum, it will return INVALID_ORDER_MIN_SIZE which is caught
+    // in the error handler below.
     let book = get_orderbook(&client, &token_id).await?;
-
-    // ── Feature 1: minimum order size check ─────────────────────────────────
-    // min_order_size from the order book is expressed in USDC (collateral).
-    if let Some(min_str) = &book.min_order_size {
-        if let Ok(min_size) = min_str.parse::<f64>() {
-            if min_size > 0.0 && usdc_amount < min_size {
-                let msg = format!(
-                    "Amount {:.2} USDC is below market minimum of {:.2} USDC. \
-                     Re-run with --amount {:.2} to place the minimum order.",
-                    usdc_amount, min_size, min_size
-                );
-                println!(
-                    "{}",
-                    serde_json::json!({ "ok": false, "error": msg })
-                );
-                std::process::exit(1);
-            }
-        }
-    }
-    // ── End Feature 1 ────────────────────────────────────────────────────────
 
     if dry_run {
         println!(
@@ -98,24 +109,9 @@ pub async fn run(
         }
         rp
     } else {
-        // Reuse the order book already fetched for the min-size check above.
         compute_buy_worst_price(&book.asks, usdc_amount)
             .ok_or_else(|| anyhow::anyhow!("No asks available in the order book"))?
     };
-
-    // Check USDC allowance and auto-approve if needed
-    use crate::config::Contracts;
-    let exchange_addr = Contracts::exchange_for(neg_risk);
-    let allowance_info =
-        get_balance_allowance(&client, &signer_addr, &creds, "COLLATERAL", None).await?;
-    let allowance_raw = allowance_info.allowance_for(exchange_addr);
-    let usdc_needed_raw = to_token_units(usdc_amount);
-
-    if allowance_raw < usdc_needed_raw || auto_approve {
-        eprintln!("[polymarket] Approving {} USDC.e for CTF Exchange...", usdc_amount);
-        let tx_hash = approve_usdc(neg_risk, usdc_needed_raw).await?;
-        eprintln!("[polymarket] Approval tx: {}", tx_hash);
-    }
 
     // Build order amounts using integer arithmetic to guarantee maker/taker == limit_price exactly.
     //
@@ -142,8 +138,57 @@ pub async fn run(
     let step = step_raw / g2 * 100; // lcm(step_raw, 100)
 
     let max_taker_raw = (usdc_amount / limit_price * 1_000_000.0).floor() as u128;
-    let taker_amount_raw = (max_taker_raw / step) * step;
+    let taker_amount_raw = if round_up {
+        // Ceiling: snap UP to the nearest valid step (may spend slightly more than requested)
+        ((max_taker_raw + step - 1) / step) * step
+    } else {
+        // Floor: never spend more than requested
+        (max_taker_raw / step) * step
+    };
     let maker_amount_raw = price_ticks * taker_amount_raw / tick_scale;
+
+    // Guard: amount too small to satisfy divisibility constraints — bail before approval.
+    if taker_amount_raw == 0 || maker_amount_raw == 0 {
+        let min_usdc = step as f64 / 1_000_000.0 * limit_price;
+        bail!(
+            "Amount too small: ${:.6} at price {:.4} rounds to 0 shares after divisibility \
+             alignment. Minimum for this market/price is ~${:.6}. Pass --round-up to \
+             automatically place the minimum amount instead.",
+            usdc_amount, limit_price, min_usdc
+        );
+    }
+
+    // Notify if round-up increased the amount
+    let actual_usdc = maker_amount_raw as f64 / 1_000_000.0;
+    if round_up && actual_usdc > usdc_amount + 1e-6 {
+        eprintln!(
+            "[polymarket] Note: amount rounded up from ${:.6} to ${:.6} to satisfy \
+             order divisibility constraints.",
+            usdc_amount, actual_usdc
+        );
+    }
+
+    // Check USDC allowance and auto-approve if needed.
+    // Use maker_amount_raw as the needed amount (accounts for any round-up).
+    // For neg_risk markets the CLOB checks allowance on BOTH NEG_RISK_CTF_EXCHANGE and
+    // NEG_RISK_ADAPTER — take the minimum so we re-approve if either is insufficient.
+    use crate::config::Contracts;
+    let allowance_info =
+        get_balance_allowance(&client, &signer_addr, &creds, "COLLATERAL", None).await?;
+    let allowance_raw = if neg_risk {
+        let a_exchange = allowance_info.allowance_for(Contracts::NEG_RISK_CTF_EXCHANGE);
+        let a_adapter  = allowance_info.allowance_for(Contracts::NEG_RISK_ADAPTER);
+        a_exchange.min(a_adapter)
+    } else {
+        allowance_info.allowance_for(Contracts::CTF_EXCHANGE)
+    };
+    let usdc_needed_raw = maker_amount_raw as u64;
+
+    if allowance_raw < usdc_needed_raw || auto_approve {
+        eprintln!("[polymarket] Approving {:.6} USDC.e for CTF Exchange...", actual_usdc);
+        let tx_hash = approve_usdc(neg_risk, usdc_needed_raw).await?;
+        eprintln!("[polymarket] Approval tx: {}", tx_hash);
+    }
 
     let salt = rand_salt();
 
@@ -155,7 +200,7 @@ pub async fn run(
         token_id: token_id.clone(),
         maker_amount: maker_amount_raw as u64,
         taker_amount: taker_amount_raw as u64,
-        expiration: 0,
+        expiration,
         nonce: 0,
         fee_rate_bps,
         side: 0, // BUY
@@ -172,7 +217,7 @@ pub async fn run(
         token_id: token_id.clone(),
         maker_amount: maker_amount_raw.to_string(),
         taker_amount: taker_amount_raw.to_string(),
-        expiration: "0".to_string(),
+        expiration: expiration.to_string(),
         nonce: "0".to_string(),
         fee_rate_bps: fee_rate_bps.to_string(),
         side: "BUY".to_string(),
@@ -183,14 +228,20 @@ pub async fn run(
     let order_req = OrderRequest {
         order: order_body,
         owner: creds.api_key.clone(),
-        order_type: order_type.to_uppercase(),
-        post_only: false,
+        order_type: effective_order_type.to_uppercase(),
+        post_only,
     };
 
     let resp = post_order(&client, &signer_addr, &creds, &order_req).await?;
 
     if resp.success != Some(true) {
         let msg = resp.error_msg.as_deref().unwrap_or("unknown error");
+        if msg.to_uppercase().contains("INVALID_ORDER_MIN_SIZE") {
+            bail!(
+                "Order rejected by CLOB: amount is below this market's minimum order size. \
+                 Try a larger amount."
+            );
+        }
         bail!("Order placement failed: {}", msg);
     }
 
@@ -203,10 +254,14 @@ pub async fn run(
             "outcome": outcome,
             "token_id": token_id,
             "side": "BUY",
-            "order_type": order_type.to_uppercase(),
+            "order_type": effective_order_type.to_uppercase(),
             "limit_price": limit_price,
-            "usdc_amount": maker_amount_raw as f64 / 1_000_000.0,
+            "usdc_amount": actual_usdc,
+            "usdc_requested": usdc_amount,
             "shares": taker_amount_raw as f64 / 1_000_000.0,
+            "rounded_up": round_up && actual_usdc > usdc_amount + 1e-6,
+            "post_only": post_only,
+            "expires": if expiration > 0 { serde_json::Value::Number(expiration.into()) } else { serde_json::Value::Null },
             "tx_hashes": resp.tx_hashes,
         }
     });

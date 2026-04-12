@@ -76,6 +76,22 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
 
+        /// Round up to the nearest valid order size if amount is too small to satisfy
+        /// Polymarket's divisibility constraints at the given price. Without this flag
+        /// the command exits with an error and the required minimum amount.
+        #[arg(long)]
+        round_up: bool,
+
+        /// Maker-only: reject the order if it would immediately cross the spread (become a taker).
+        /// Requires --order-type GTC. Qualifies for Polymarket maker rebates.
+        #[arg(long)]
+        post_only: bool,
+
+        /// Cancel the order automatically at this Unix timestamp (seconds, UTC).
+        /// Minimum 60 seconds from now. Creates a GTD (Good Till Date) order.
+        #[arg(long)]
+        expires: Option<u64>,
+
         /// Confirm a previously gated action (reserved for future use)
         #[arg(long)]
         confirm: bool,
@@ -110,6 +126,16 @@ enum Commands {
         /// Simulate without submitting order or approval
         #[arg(long)]
         dry_run: bool,
+
+        /// Maker-only: reject the order if it would immediately cross the spread (become a taker).
+        /// Requires --order-type GTC. Qualifies for Polymarket maker rebates.
+        #[arg(long)]
+        post_only: bool,
+
+        /// Cancel the order automatically at this Unix timestamp (seconds, UTC).
+        /// Minimum 60 seconds from now. Creates a GTD (Good Till Date) order.
+        #[arg(long)]
+        expires: Option<u64>,
 
         /// Confirm a low-price market sell that was previously gated
         #[arg(long)]
@@ -154,9 +180,12 @@ async fn main() {
             order_type,
             approve,
             dry_run,
+            round_up,
+            post_only,
+            expires,
             confirm: _confirm,
         } => {
-            commands::buy::run(&market_id, &outcome, &amount, price, &order_type, approve, dry_run).await
+            commands::buy::run(&market_id, &outcome, &amount, price, &order_type, approve, dry_run, round_up, post_only, expires).await
         }
         Commands::Sell {
             market_id,
@@ -166,9 +195,11 @@ async fn main() {
             order_type,
             approve,
             dry_run,
+            post_only,
+            expires,
             confirm,
         } => {
-            commands::sell::run(&market_id, &outcome, &shares, price, &order_type, approve, dry_run, confirm).await
+            commands::sell::run(&market_id, &outcome, &shares, price, &order_type, approve, dry_run, post_only, expires, confirm).await
         }
         Commands::Cancel { order_id, market, all } => {
             if all {
