@@ -61,6 +61,15 @@ pub fn load_credentials() -> Result<Option<Credentials>> {
     Ok(Some(creds))
 }
 
+pub fn clear_credentials() -> Result<()> {
+    let path = creds_path();
+    if path.exists() {
+        std::fs::remove_file(&path)
+            .with_context(|| format!("removing {}", path.display()))?;
+    }
+    Ok(())
+}
+
 pub fn save_credentials(creds: &Credentials) -> Result<()> {
     let path = creds_path();
     if let Some(parent) = path.parent() {

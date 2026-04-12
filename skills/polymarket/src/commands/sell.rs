@@ -241,6 +241,15 @@ pub async fn run(
                  Try a larger amount."
             );
         }
+        let msg_upper = msg.to_uppercase();
+        if msg_upper.contains("NOT AUTHORIZED") || msg_upper.contains("UNAUTHORIZED") {
+            let _ = crate::config::clear_credentials();
+            bail!(
+                "Order rejected: credentials are stale or invalid ({}). \
+                 Cached credentials cleared — run the command again to re-derive.",
+                msg
+            );
+        }
         bail!("Order placement failed: {}", msg);
     }
 

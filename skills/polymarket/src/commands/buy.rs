@@ -274,6 +274,15 @@ pub async fn run(
                  Try a larger amount."
             );
         }
+        let msg_upper = msg.to_uppercase();
+        if msg_upper.contains("NOT AUTHORIZED") || msg_upper.contains("UNAUTHORIZED") {
+            let _ = crate::config::clear_credentials();
+            bail!(
+                "Order rejected: credentials are stale or invalid ({}). \
+                 Cached credentials cleared — run the command again to re-derive.",
+                msg
+            );
+        }
         bail!("Order placement failed: {}", msg);
     }
 
@@ -303,6 +312,7 @@ pub async fn run(
 
 /// Resolve (condition_id, token_id, neg_risk) from a market_id and outcome string.
 /// Supports any outcome label (e.g. "yes", "no", "trump", "republican", "option-a").
+/// Bails early if the market is not accepting orders (closed, resolved, or paused).
 pub async fn resolve_market_token(
     client: &Client,
     market_id: &str,
@@ -311,6 +321,13 @@ pub async fn resolve_market_token(
     let outcome_lower = outcome.to_lowercase();
     if market_id.starts_with("0x") || market_id.starts_with("0X") {
         let market = get_clob_market(client, market_id).await?;
+        if !market.accepting_orders {
+            bail!(
+                "Market {} is not accepting orders (closed or resolved). \
+                 Use `polymarket get-market` to check its current status.",
+                market_id
+            );
+        }
         let token = market
             .tokens
             .iter()
@@ -322,6 +339,13 @@ pub async fn resolve_market_token(
         Ok((market.condition_id.clone(), token.token_id.clone(), market.neg_risk))
     } else {
         let gamma = crate::api::get_gamma_market_by_slug(client, market_id).await?;
+        if !gamma.accepting_orders {
+            bail!(
+                "Market '{}' is not accepting orders (closed or resolved). \
+                 Use `polymarket get-market` to check its current status.",
+                market_id
+            );
+        }
         let condition_id = gamma
             .condition_id
             .clone()

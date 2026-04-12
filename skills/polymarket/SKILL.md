@@ -199,6 +199,8 @@ Look for `USDC.e` (contract `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`). If yo
 - **From a CEX**: withdraw USDC to your Polygon address via the Polygon network
 - **Minimum suggested**: $5–$10 to cover a small test trade plus gas (Polygon gas is cheap, typically < $0.01 per tx)
 
+> **There is no "Polymarket deposit"**: Polymarket does not have a deposit step. USDC.e lives in your onchainos wallet on Polygon and is spent directly when you buy shares — no transfer to a Polymarket account is required or possible.
+
 ### Step 4 — Find a market and place a trade
 
 ```bash
@@ -375,13 +377,15 @@ polymarket get-positions --address 0xAbCd...
 polymarket buy --market-id <id> --outcome <outcome> --amount <usdc> [--price <0-1>] [--order-type <GTC|FOK>] [--approve] [--round-up]
 ```
 
+> **Amount vs shares**: `buy` takes `--amount` in **USDC.e** (dollars you spend). `sell` takes `--shares` in **outcome tokens** (shares you hold). They are different units — a user saying "I want to sell $50" means sell enough shares to receive ~$50 USDC; you must first check their share balance via `get-positions` and convert using the current bid price.
+
 **Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--market-id` | Market condition_id or slug | required |
 | `--outcome` | outcome label, case-insensitive (e.g. `yes`, `no`, `trump`, `republican`) | required |
 | `--amount` | USDC.e to spend, e.g. `100` = $100.00 | required |
-| `--price` | Limit price in (0, 1). Omit for market order (FOK) | — |
+| `--price` | Limit price in (0, 1), representing **probability** (e.g. `0.65` = "65% chance this outcome occurs = $0.65 per share"). Omit for market order (FOK). | — |
 | `--order-type` | `GTC` (resting limit) or `FOK` (fill-or-kill) | `GTC` |
 | `--approve` | Force USDC.e approval before placing | false |
 | `--dry-run` | Simulate without submitting the order or triggering any on-chain approval. Prints a confirmation JSON with resolved parameters and exits. | false |
@@ -412,6 +416,8 @@ polymarket buy --market-id <id> --outcome <outcome> --amount <usdc> [--price <0-
 > 4. Never autonomously choose a higher amount without explicit user confirmation.
 
 > ⚠️ **Market order slippage**: When `--price` is omitted, the order is a FOK (fill-or-kill) market order that fills at the best available price from the order book. On low-liquidity markets or large order sizes, this price may be significantly worse than the mid-price. Recommend using `--price` (limit order) for amounts above $10 to control slippage.
+
+> ⚠️ **Short-lived markets**: Check `end_date` in `get-market` output before placing resting (GTC) orders. A market resolving in less than 24 hours may resolve before a limit order fills — use FOK for immediate execution or confirm the user is aware.
 
 **Output fields:** `order_id`, `status` (live/matched/unmatched), `condition_id`, `outcome`, `token_id`, `side`, `order_type`, `limit_price`, `usdc_amount`, `shares`, `tx_hashes`
 
@@ -527,6 +533,8 @@ polymarket cancel --all
 
 **Auth required:** Yes — onchainos wallet; credentials auto-derived on first run
 
+> **Open orders only**: `cancel` operates on **open (resting) orders** — orders that have not yet filled, partially filled, or expired. Already-filled orders cannot be cancelled. To check which orders are currently open, use `get-positions` or the Polymarket UI.
+
 **Output fields:** `canceled` (list of cancelled order IDs), `not_canceled` (map of failed IDs to reasons)
 
 **Example:**
@@ -587,7 +595,7 @@ polymarket redeem --market-id will-trump-win-2024
 
 The onchainos wallet address is the Polymarket trading identity. Credentials are automatically re-derived if the active wallet changes.
 
-**Credential rotation**: If credentials may be compromised or API calls start returning 401 errors, delete the cache file and they will be re-derived automatically on the next trading command:
+**Credential rotation**: If `buy` or `sell` returns `"credentials are stale or invalid"`, the plugin automatically clears the cached credentials and prompts you to re-run — no manual action needed. To manually force re-derivation:
 
 ```bash
 rm ~/.config/polymarket/creds.json
@@ -689,6 +697,8 @@ User wants to trade:
 
 ## Command Routing Table
 
+> **Extracting market ID from a URL**: Polymarket URLs look like `polymarket.com/event/<slug>` or `polymarket.com/event/<slug>/<condition_id>`. Use the slug (the human-readable string, e.g. `will-trump-win-2024`) directly as `--market-id`. If the URL contains a `0x`-prefixed condition_id, use that instead.
+
 | User Intent | Command |
 |-------------|---------|
 | Check if region is restricted before topping up | `polymarket check-access` |
@@ -740,6 +750,9 @@ Fees are deducted by the exchange from the received amount. The `feeRateBps` fie
 
 ### v0.2.5 (2026-04-12)
 
+- **fix**: Stale credentials auto-cleared on 401 — `buy` and `sell` now detect `NOT AUTHORIZED`/`UNAUTHORIZED` responses from the CLOB, delete `~/.config/polymarket/creds.json` automatically, and return a clear error asking the user to re-run. Previously the user had to find and delete the file manually.
+- **fix**: `accepting_orders` guard added to `resolve_market_token` (used by `buy` and `sell`). Attempting to trade on a closed or resolved market now exits immediately with a clear error before any wallet calls or approval transactions.
+- **fix (SKILL)**: Added targeted agent guidance for six common user deviation scenarios: extracting market ID from Polymarket URLs (#1), short-lived market warning before resting GTC orders (#3), amount vs shares clarification (#5), no "Polymarket deposit" step misconception (#10), cancel only applies to open orders (#11), price field represents probability not dollar value (#12).
 - **feat**: `check-access` command — dedicated geo-restriction check. Sends an empty `POST /order` to the CLOB with no auth headers; the CLOB applies geo-checks before auth on this endpoint, returning HTTP 403 + `"Trading restricted in your region"` for blocked IPs and 400/401 for unrestricted ones. Body-matched (not status-code-only) to avoid false positives. Returns `accessible: true/false`. Run once before recommending USDC top-up. Tested live on both restricted and unrestricted IPs.
 - **feat**: `redeem --market-id <id>` command — redeems winning outcome tokens after a market resolves by calling `redeemPositions` on the Gnosis CTF contract with `indexSets=[1,2]`. The CTF contract pays out winning tokens and silently no-ops for losing ones, so passing both is safe. `--dry-run` previews the call without submitting. Not supported for `neg_risk: true` markets (use Polymarket web UI).
 - **fix (critical)**: `sell` on `neg_risk: true` markets no longer always fails with "allowance not enough". `approve_ctf` now approves both `NEG_RISK_CTF_EXCHANGE` and `NEG_RISK_ADAPTER` for neg_risk markets, mirroring the `approve_usdc` pattern already used by `buy`.
