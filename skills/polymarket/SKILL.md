@@ -95,6 +95,8 @@ fi
 - Staking, lending, swapping, or non-prediction-market DeFi activities
 - Fetching real-time news or external event outcomes — use a search tool for that
 - Executing trades autonomously without user confirmation of market, outcome, amount, and price
+- **Manually constructing EIP-712 messages, running raw curl signing flows, or deriving API credentials by hand** — the plugin handles all signing and credential derivation internally. If `polymarket buy` or `polymarket sell` fails, report the error directly — do NOT attempt to replicate the plugin's internals with bash/curl.
+- **Concluding that `onchainos sign-message` is unavailable** based on `onchainos --help` or `onchainos wallet --help` output alone. `sign-message` is a subcommand of `onchainos wallet` — verify with `onchainos wallet sign-message --help` before deciding it is missing. If it is genuinely missing, the fix is to upgrade onchainos, not to bypass the plugin.
 
 ---
 
@@ -102,7 +104,7 @@ fi
 
 When a user signals they are **new or just installed** this plugin — e.g. "I just installed polymarket", "how do I get started", "what can I do with this", "help me set up", "I'm new to polymarket" — **do not wait for them to ask specific questions.** Proactively walk them through the Quickstart in order, one step at a time, waiting for confirmation before proceeding to the next:
 
-1. **Check wallet** — run `onchainos wallet addresses --chain 137`. If no address, direct them to connect via `onchainos wallet login`.
+1. **Check wallet** — run `onchainos wallet addresses --chain 137`. If no address, direct them to connect via `onchainos wallet login`. Also verify `onchainos wallet sign-message --help` works — if missing, trading is blocked until onchainos is upgraded (do not attempt manual signing workarounds).
 2. **Check access** — run `polymarket check-access`. If `accessible: false`, stop and show the warning. Do not proceed to funding.
 3. **Check balance** — run `onchainos wallet balance --chain 137`. Show USDC.e balance. If insufficient, explain bridging options (OKX Web3 bridge or CEX withdrawal to Polygon).
 4. **Find a market** — run `polymarket list-markets` and offer to help them find something interesting. Ask what topics they care about.
@@ -226,7 +228,7 @@ polymarket --version
 
 Expected: `polymarket 0.2.5`. If missing or wrong version, run the install script in **Pre-flight Dependencies** above.
 
-### Step 2 — Install `onchainos` CLI (required for buy/sell/cancel only)
+### Step 2 — Install `onchainos` CLI (required for buy/sell/cancel/redeem only)
 
 > `list-markets`, `get-market`, and `get-positions` do **not** require onchainos. Skip this step for read-only operations.
 
@@ -235,6 +237,14 @@ onchainos --version 2>/dev/null || echo "onchainos not installed"
 ```
 
 If onchainos is not installed, direct the user to https://github.com/okx/onchainos for installation instructions.
+
+Then confirm `sign-message` is available — this is what the plugin uses internally for EIP-712 order signing:
+
+```bash
+onchainos wallet sign-message --help
+```
+
+If this command errors or is not found, onchainos must be upgraded before trading will work. **Do not attempt to work around this by manually signing EIP-712 messages or using raw curl.** Direct the user to upgrade onchainos.
 
 ### Step 3 — Verify wallet has a Polygon address (required for buy/sell/cancel/redeem only)
 
