@@ -15,7 +15,7 @@ sol! {
     function symbol() external view returns (string);
     function balanceOf(address account) external view returns (uint256);
 
-    // SmartRouter — exactInputSingle (7-field, NO deadline)
+    // SmartRouter — exactInputSingle (7-field, NO deadline) — BSC / Base
     struct ExactInputSingleParams {
         address tokenIn;
         address tokenOut;
@@ -26,6 +26,19 @@ sol! {
         uint160 sqrtPriceLimitX96;
     }
     function exactInputSingle(ExactInputSingleParams params) external payable returns (uint256 amountOut);
+
+    // SmartRouter — exactInputSingle (8-field, WITH deadline) — Arbitrum
+    struct ExactInputSingleParamsWithDeadline {
+        address tokenIn;
+        address tokenOut;
+        uint24  fee;
+        address recipient;
+        uint256 deadline;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+        uint160 sqrtPriceLimitX96;
+    }
+    function exactInputSingleWithDeadline(ExactInputSingleParamsWithDeadline params) external payable returns (uint256 amountOut);
 
     // QuoterV2 — quoteExactInputSingle
     struct QuoteExactInputSingleParams {
@@ -92,20 +105,49 @@ pub fn encode_exact_input_single(
     recipient: &str,
     amount_in: u128,
     amount_out_minimum: u128,
+    with_deadline: bool,
 ) -> Result<String> {
     use alloy_primitives::Uint;
-    let call = exactInputSingleCall {
-        params: ExactInputSingleParams {
+    if with_deadline {
+        // Arbitrum SmartRouter: selector 0x414bf389, 8-field struct with deadline
+        let deadline = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() + 1800; // now + 30 min
+        // alloy sol! generates the function as exactInputSingleWithDeadlineCall,
+        // but the on-chain selector must be 0x414bf389 (exactInputSingle with deadline struct).
+        // We manually encode: selector + ABI-encoded params.
+        let params = ExactInputSingleParamsWithDeadline {
             tokenIn: token_in.parse::<Address>()?,
             tokenOut: token_out.parse::<Address>()?,
             fee: Uint::<24, 1>::from(fee),
             recipient: recipient.parse::<Address>()?,
+            deadline: U256::from(deadline),
             amountIn: U256::from(amount_in),
             amountOutMinimum: U256::from(amount_out_minimum),
             sqrtPriceLimitX96: alloy_primitives::U160::ZERO,
-        },
-    };
-    Ok(format!("0x{}", hex::encode(call.abi_encode())))
+        };
+        use alloy_sol_types::SolValue;
+        let encoded = params.abi_encode();
+        // Selector for exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))
+        let selector = [0x41u8, 0x4b, 0xf3, 0x89];
+        let mut calldata = selector.to_vec();
+        calldata.extend_from_slice(&encoded);
+        Ok(format!("0x{}", hex::encode(calldata)))
+    } else {
+        let call = exactInputSingleCall {
+            params: ExactInputSingleParams {
+                tokenIn: token_in.parse::<Address>()?,
+                tokenOut: token_out.parse::<Address>()?,
+                fee: Uint::<24, 1>::from(fee),
+                recipient: recipient.parse::<Address>()?,
+                amountIn: U256::from(amount_in),
+                amountOutMinimum: U256::from(amount_out_minimum),
+                sqrtPriceLimitX96: alloy_primitives::U160::ZERO,
+            },
+        };
+        Ok(format!("0x{}", hex::encode(call.abi_encode())))
+    }
 }
 
 // ── QuoterV2 ──────────────────────────────────────────────────────────────────

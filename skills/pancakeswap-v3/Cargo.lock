@@ -1614,8 +1614,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "pancakeswap"
-version = "0.2.2"
+name = "pancakeswap-v3"
+version = "1.0.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",

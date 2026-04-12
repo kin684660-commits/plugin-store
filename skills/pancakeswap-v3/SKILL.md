@@ -1,7 +1,7 @@
 ---
-name: pancakeswap
-description: "Swap tokens and manage liquidity on PancakeSwap V3 on BNB Chain, Base, and Arbitrum"
-version: "0.2.3"
+name: pancakeswap-v3
+description: "Swap tokens and manage liquidity on PancakeSwap V3 on Ethereum, BNB Chain, Base, Arbitrum, and Linea"
+version: "1.0.0"
 author: "GeoGu360"
 tags:
   - dex
@@ -195,23 +195,23 @@ Get the expected output amount for a token swap without executing any transactio
 **Trigger phrases:** "get quote", "how much will I get", "price for swap", "quote pancakeswap"
 
 ```
-pancakeswap quote \
+pancakeswap-v3 quote \
   --from <tokenIn_address_or_symbol> \
   --to   <tokenOut_address_or_symbol> \
   --amount <human_amount> \
-  [--chain 56|8453|42161]
+  [--chain 1|56|8453|42161|59144]
 ```
 
 **Examples:**
 ```
 # Quote 1 WBNB → USDT on BSC
-pancakeswap quote --from WBNB --to USDT --amount 1 --chain 56
+pancakeswap-v3 quote --from WBNB --to USDT --amount 1 --chain 56
 
 # Quote 0.5 WETH → USDC on Base
-pancakeswap quote --from WETH --to USDC --amount 0.5 --chain 8453
+pancakeswap-v3 quote --from WETH --to USDC --amount 0.5 --chain 8453
 
 # Quote 0.1 WETH → USDC on Arbitrum
-pancakeswap quote --from WETH --to USDC --amount 0.1 --chain 42161
+pancakeswap-v3 quote --from WETH --to USDC --amount 0.1 --chain 42161
 ```
 
 This command queries QuoterV2 via `eth_call` (no transaction, no gas cost). It tries all four fee tiers (0.01%, 0.05%, 0.25%, 1%) and returns the best output.
@@ -225,13 +225,14 @@ Swap an exact input amount of one token for the maximum available output via Pan
 **Trigger phrases:** "swap tokens", "exchange tokens", "trade on pancakeswap", "sell token", "buy token pancake"
 
 ```
-pancakeswap swap \
+pancakeswap-v3 swap \
   --from <tokenIn_address_or_symbol> \
   --to   <tokenOut_address_or_symbol> \
   --amount <human_amount> \
   [--slippage 0.5] \
-  [--chain 56|8453|42161] \
-  [--dry-run]
+  [--chain 1|56|8453|42161|59144] \
+  [--dry-run] \
+  [--confirm]
 ```
 
 > **User confirmation required**: Always ask the user to confirm swap details before submitting any transaction.
@@ -239,18 +240,20 @@ pancakeswap swap \
 **Execution flow:**
 
 1. Fetch token metadata (decimals, symbol) via `eth_call`.
-2. Get best quote across all fee tiers via QuoterV2 `eth_call`.
-3. Compute `amountOutMinimum` using the slippage tolerance.
-4. Present the full swap plan (input, expected output, minimum output, fee tier, SmartRouter address).
-5. Ask user to confirm before proceeding.
-6. After user confirmation, submit Step 1 — ERC-20 approve via `onchainos wallet contract-call` (tokenIn → SmartRouter).
-7. After user confirmation, submit Step 2 — `exactInputSingle` via `onchainos wallet contract-call` to SmartRouter.
-8. Report transaction hash(es) to the user.
+2. Check wallet balance via `balanceOf` — bail immediately with a human-readable error if insufficient (skipped in `--dry-run`).
+3. Get best quote across all fee tiers via QuoterV2 `eth_call`.
+4. Compute `amountOutMinimum` using the slippage tolerance.
+5. Present the full swap plan (input, expected output, minimum output, fee tier, SmartRouter address).
+6. Without `--confirm`: print preview calldata and exit.
+7. With `--confirm`: submit Step 1 — ERC-20 approve via `onchainos wallet contract-call` (tokenIn → SmartRouter). Waits for on-chain confirmation before proceeding.
+8. Submit Step 2 — `exactInputSingle` via `onchainos wallet contract-call` to SmartRouter.
+9. Report transaction hash(es) to the user.
 
 **Flags:**
 - `--slippage` — tolerance in percent (default: 0.5%)
-- `--chain` — 56 (BSC) or 8453 (Base), default 56
+- `--chain` — 1 (Ethereum), 56 (BSC), 8453 (Base), 42161 (Arbitrum), 59144 (Linea), default 56
 - `--dry-run` — print calldata without submitting
+- `--confirm` — required to broadcast transactions
 
 **Notes:**
 - SmartRouter `exactInputSingle` uses 7 struct fields (no deadline field).
@@ -266,16 +269,16 @@ Query PancakeV3Factory for all pools across all fee tiers for a given token pair
 **Trigger phrases:** "show pools", "list pancakeswap pools", "find pool", "pool info", "liquidity pool"
 
 ```
-pancakeswap pools \
+pancakeswap-v3 pools \
   --token0 <address_or_symbol> \
   --token1 <address_or_symbol> \
-  [--chain 56|8453|42161]
+  [--chain 1|56|8453|42161|59144]
 ```
 
 **Example:**
 ```
-pancakeswap pools --token0 WBNB --token1 USDT --chain 56
-pancakeswap pools --token0 WETH --token1 USDC --chain 42161
+pancakeswap-v3 pools --token0 WBNB --token1 USDT --chain 56
+pancakeswap-v3 pools --token0 WETH --token1 USDC --chain 42161
 ```
 
 Returns pool addresses, liquidity, current price, and current tick for each fee tier. This is a read-only operation using `eth_call` — no transactions or gas required.
@@ -291,15 +294,15 @@ View all active PancakeSwap V3 LP positions for a wallet address.
 **Trigger phrases:** "my positions", "show LP positions", "view liquidity positions", "my pancakeswap LP"
 
 ```
-pancakeswap positions \
+pancakeswap-v3 positions \
   --owner <wallet_address> \
-  [--chain 56|8453|42161]
+  [--chain 1|56|8453|42161|59144]
 ```
 
 **Example:**
 ```
-pancakeswap positions --owner 0xYourWalletAddress --chain 56
-pancakeswap positions --owner 0xYourWalletAddress --chain 42161
+pancakeswap-v3 positions --owner 0xYourWalletAddress --chain 56
+pancakeswap-v3 positions --owner 0xYourWalletAddress --chain 42161
 ```
 
 Queries TheGraph subgraph first; falls back to on-chain enumeration via NonfungiblePositionManager if the subgraph is unavailable. Read-only — no transactions.
@@ -313,7 +316,7 @@ Mint a new V3 LP position via NonfungiblePositionManager.
 **Trigger phrases:** "add liquidity", "provide liquidity", "deposit to pool", "mint LP position"
 
 ```
-pancakeswap add-liquidity \
+pancakeswap-v3 add-liquidity \
   --token-a <address_or_symbol> \
   --token-b <address_or_symbol> \
   --fee <100|500|2500|10000> \
@@ -322,7 +325,7 @@ pancakeswap add-liquidity \
   [--tick-lower <int>] \
   [--tick-upper <int>] \
   [--slippage 1.0] \
-  [--chain 56|8453|42161] \
+  [--chain 1|56|8453|42161|59144] \
   [--dry-run]
 ```
 
@@ -362,21 +365,21 @@ Remove liquidity from an existing V3 position. This always performs two steps: `
 **Trigger phrases:** "remove liquidity", "withdraw liquidity", "close LP position", "collect fees"
 
 ```
-pancakeswap remove-liquidity \
+pancakeswap-v3 remove-liquidity \
   --token-id <nft_id> \
   [--liquidity-pct 100] \
   [--slippage 0.5] \
-  [--chain 56|8453|42161] \
+  [--chain 1|56|8453|42161|59144] \
   [--dry-run]
 ```
 
 **Example:**
 ```
 # Remove all liquidity from position #1234 on BSC
-pancakeswap remove-liquidity --token-id 1234 --chain 56
+pancakeswap-v3 remove-liquidity --token-id 1234 --chain 56
 
 # Remove 50% liquidity from position #345455 on Arbitrum with 1% slippage
-pancakeswap remove-liquidity --token-id 345455 --liquidity-pct 50 --slippage 1.0 --chain 42161
+pancakeswap-v3 remove-liquidity --token-id 345455 --liquidity-pct 50 --slippage 1.0 --chain 42161
 ```
 
 **Execution flow:**
@@ -395,14 +398,24 @@ pancakeswap remove-liquidity --token-id 345455 --liquidity-pct 50 --slippage 1.0
 
 ## Contract Addresses
 
-| Contract | BSC (56) | Base (8453) | Arbitrum (42161) |
-|----------|----------|-------------|------------------|
-| SmartRouter | `0x13f4EA83D0bd40E75C8222255bc855a974568Dd4` | `0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86` | `0x5E325eDA8064b456f4781070C0738d849c824258` |
-| PancakeV3Factory | `0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865` | `0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865` | `0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865` |
-| NonfungiblePositionManager | `0x46A15B0b27311cedF172AB29E4f4766fbE7F4364` | `0x46A15B0b27311cedF172AB29E4f4766fbE7F4364` | `0x46A15B0b27311cedF172AB29E4f4766fbE7F4364` |
-| QuoterV2 | `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997` | `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997` | `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997` |
+| Contract | Ethereum (1) | BSC (56) | Base (8453) | Arbitrum (42161) | Linea (59144) |
+|----------|--------------|----------|-------------|------------------|---------------|
+| SmartRouter | `0x13f4EA83D0bd40E75C8222255bc855a974568Dd4` | `0x13f4EA83D0bd40E75C8222255bc855a974568Dd4` | `0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86` | `0x32226588378236Fd0c7c4053999F88aC0e5cAc77` | `0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86` |
+| PancakeV3Factory | `0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865` | `0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865` | `0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865` | `0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865` | `0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865` |
+| NonfungiblePositionManager | `0x46A15B0b27311cedF172AB29E4f4766fbE7F4364` | `0x46A15B0b27311cedF172AB29E4f4766fbE7F4364` | `0x46A15B0b27311cedF172AB29E4f4766fbE7F4364` | `0x46A15B0b27311cedF172AB29E4f4766fbE7F4364` | `0x46A15B0b27311cedF172AB29E4f4766fbE7F4364` |
+| QuoterV2 | `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997` | `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997` | `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997` | `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997` | `0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997` |
 
 ## Common Token Addresses
+
+### Ethereum (Chain 1)
+| Symbol | Address |
+|--------|---------|
+| WETH / ETH | `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` |
+| USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
+| USDT | `0xdAC17F958D2ee523a2206206994597C13D831ec7` |
+| DAI | `0x6B175474E89094C44Da98b954EedeAC495271d0F` |
+| WBTC | `0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599` |
+| CAKE | `0x152649eA73beAb28c5b49B26eb48f7EAD6d4c898` |
 
 ### BSC (Chain 56)
 | Symbol | Address |
@@ -433,7 +446,24 @@ pancakeswap remove-liquidity --token-id 345455 --liquidity-pct 50 --slippage 1.0
 | ARB | `0x912CE59144191C1204E64559FE8253a0e49E6548` |
 | WBTC | `0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f` |
 
+### Linea (Chain 59144)
+| Symbol | Address |
+|--------|---------|
+| WETH / ETH | `0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f` |
+| USDC | `0x176211869cA2b568f2A7D4EE941E073a821EE1ff` |
+| USDT | `0xA219439258ca9da29E9Cc4cE5596924745e12B93` |
+| WBTC | `0x3aAB2285ddcDdaD8edf438C1bAB47e1a9D05a9b4` |
+
 ## Changelog
+
+### v1.0.0 (2026-04-12)
+
+- **breaking**: Skill renamed from `pancakeswap` to `pancakeswap-v3` — binary name and plugin directory updated accordingly.
+- **feat**: Add Ethereum (chain 1) and Linea (chain 59144) support — SmartRouter, Factory, NPM, QuoterV2, and token symbol resolution.
+- **fix**: Arbitrum SmartRouter updated to official address `0x32226588378236Fd0c7c4053999F88aC0e5cAc77` (7-field `exactInputSingle`, no deadline). Previous address `0x5E325eDA...` was the Universal Router with an incompatible `execute()` interface.
+- **feat**: Pre-flight balance check in `swap` — verifies `balanceOf(wallet) >= amountIn` before any RPC quote calls; returns a human-readable error immediately if insufficient. Skipped in `--dry-run`.
+- **fix**: Approve confirmation wait in `swap` — replaced fixed 3 s sleep with `wait_and_check_receipt` polling. The 3 s sleep was insufficient on Ethereum (~12 s blocks), causing `STF` reverts when the swap was submitted before the approve landed.
+- **fix**: `--chain` help text updated across all commands to include chain IDs 1 and 59144.
 
 ### v0.2.2 (2026-04-11)
 

@@ -1,10 +1,10 @@
 [package]
-name = "pancakeswap"
-version = "0.2.3"
+name = "pancakeswap-v3"
+version = "1.0.0"
 edition = "2021"
 
 [[bin]]
-name = "pancakeswap"
+name = "pancakeswap-v3"
 path = "src/main.rs"
 
 [dependencies]

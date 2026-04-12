@@ -1,4 +1,4 @@
-/// `pancakeswap swap` — exact-input token swap via SmartRouter.
+/// `pancakeswap-v3 swap` — exact-input token swap via SmartRouter.
 
 use anyhow::Result;
 
@@ -35,6 +35,24 @@ pub async fn run(args: SwapArgs) -> Result<()> {
         anyhow::bail!("Amount must be greater than 0.");
     }
 
+    // Fetch wallet address early so we can check balance before RPC quote calls
+    let wallet_addr = crate::onchainos::get_wallet_address().await
+        .unwrap_or_else(|_| "0x0000000000000000000000000000000000000000".to_string());
+
+    // Check sufficient balance before making expensive quote RPC calls.
+    // Skip in dry-run: wallet may not be connected and the calldata preview is still useful.
+    if !args.dry_run {
+        let balance_in = crate::rpc::get_balance(&from_addr, &wallet_addr, cfg.rpc_url).await?;
+        if balance_in < amount_in {
+            let have = balance_in as f64 / 10f64.powi(decimals_in as i32);
+            let need = amount_in as f64 / 10f64.powi(decimals_in as i32);
+            anyhow::bail!(
+                "Insufficient balance: have {:.6} {}, need {:.6} {}",
+                have, symbol_in, need, symbol_in
+            );
+        }
+    }
+
     // Get best quote across fee tiers, verifying pool has actual liquidity
     let fee_tiers = [100u32, 500, 2500, 10000];
     let mut best_out = 0u128;
@@ -67,7 +85,7 @@ pub async fn run(args: SwapArgs) -> Result<()> {
 
     if best_out == 0 {
         anyhow::bail!(
-            "No liquidity found for {}/{} on chain {}. Use `pancakeswap pools` to verify pools exist.",
+            "No liquidity found for {}/{} on chain {}. Use `pancakeswap-v3 pools` to verify pools exist.",
             symbol_in, symbol_out, args.chain
         );
     }
@@ -87,10 +105,6 @@ pub async fn run(args: SwapArgs) -> Result<()> {
     println!("  Fee tier:         {}%", best_fee as f64 / 10000.0);
     println!("  SmartRouter:      {}", cfg.smart_router);
 
-    // Fetch actual wallet address (needed for approve check and swap recipient)
-    let wallet_addr = crate::onchainos::get_wallet_address().await
-        .unwrap_or_else(|_| "0x0000000000000000000000000000000000000000".to_string());
-
     // Preview gate: without --confirm (or with --dry-run), show intent and stop.
     if args.dry_run || !args.confirm {
         let approve_calldata = crate::calldata::encode_approve(cfg.smart_router, amount_in)?;
@@ -101,10 +115,13 @@ pub async fn run(args: SwapArgs) -> Result<()> {
             &wallet_addr,
             amount_in,
             amount_out_minimum,
+            cfg.swap_with_deadline,
         )?;
         println!("\nPreview (no transactions broadcast — add --confirm to execute):");
-        println!("  Step 1 approve: onchainos wallet contract-call --chain {} --to {} --input-data {}", args.chain, from_addr, approve_calldata);
-        println!("  Step 2 swap:    onchainos wallet contract-call --chain {} --to {} --input-data {}", args.chain, cfg.smart_router, swap_calldata);
+        println!("  Step 1 approve {} {} to SmartRouter:", args.amount, symbol_in);
+        println!("    onchainos wallet contract-call --chain {} --to {} --input-data {}", args.chain, from_addr, approve_calldata);
+        println!("  Step 2 swap {} {} → min {:.6} {} ({}% slippage):", args.amount, symbol_in, amount_out_min_human, symbol_out, args.slippage);
+        println!("    onchainos wallet contract-call --chain {} --to {} --input-data {}", args.chain, cfg.smart_router, swap_calldata);
         return Ok(());
     }
 
@@ -129,8 +146,9 @@ pub async fn run(args: SwapArgs) -> Result<()> {
         ).await?;
         let approve_tx = crate::onchainos::extract_tx_hash(&approve_result);
         println!("  Approve tx: {}", approve_tx);
-        // Wait for approve to be processed before submitting swap
-        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+        // Wait for approve to be confirmed on-chain before submitting swap.
+        // 3s was too short for Ethereum (~12s blocks) — STF revert if swap lands first.
+        crate::onchainos::wait_and_check_receipt(approve_tx, cfg.rpc_url).await?;
     }
 
     // Step 2: Execute swap via SmartRouter.exactInputSingle
@@ -144,6 +162,7 @@ pub async fn run(args: SwapArgs) -> Result<()> {
         &recipient_placeholder,
         amount_in,
         amount_out_minimum,
+        cfg.swap_with_deadline,
     )?;
 
     let swap_result = crate::onchainos::wallet_contract_call(
