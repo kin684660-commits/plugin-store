@@ -805,22 +805,18 @@ pub async fn transfer_erc20_on_chain(
     to: &str,
     amount: u128,
 ) -> Result<String> {
-    let recipient_padded = pad_address(to);
-    let amount_padded = pad_u256(amount);
-    // ERC-20 transfer(address,uint256) selector = 0xa9059cbb
-    let calldata = format!("0xa9059cbb{}{}", recipient_padded, amount_padded);
-
     let output = tokio::process::Command::new("onchainos")
         .args([
-            "wallet", "contract-call",
+            "wallet", "send",
             "--chain", chain,
-            "--to", token_contract,
-            "--input-data", &calldata,
+            "--recipient", to,
+            "--amt", &amount.to_string(),
+            "--contract-token", token_contract,
             "--force",
         ])
         .output()
         .await
-        .context("Failed to spawn onchainos wallet contract-call (multi-chain)")?;
+        .context("Failed to spawn onchainos wallet send (ERC-20)")?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     if !output.status.success() {
@@ -831,7 +827,7 @@ pub async fn transfer_erc20_on_chain(
         );
     }
     let result: Value = serde_json::from_str(stdout.trim())
-        .with_context(|| format!("parsing contract-call output: {}", stdout.trim()))?;
+        .with_context(|| format!("parsing wallet send output: {}", stdout.trim()))?;
     extract_tx_hash(&result)
 }
 
@@ -843,15 +839,15 @@ pub async fn transfer_erc20_on_chain(
 pub async fn transfer_native_on_chain(chain: &str, to: &str, amount_wei: u128) -> Result<String> {
     let output = tokio::process::Command::new("onchainos")
         .args([
-            "wallet", "contract-call",
+            "wallet", "send",
             "--chain", chain,
-            "--to", to,
+            "--recipient", to,
             "--amt", &amount_wei.to_string(),
             "--force",
         ])
         .output()
         .await
-        .context("Failed to spawn onchainos wallet contract-call (native)")?;
+        .context("Failed to spawn onchainos wallet send (native)")?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     if !output.status.success() {
@@ -862,7 +858,7 @@ pub async fn transfer_native_on_chain(chain: &str, to: &str, amount_wei: u128) -
         );
     }
     let result: Value = serde_json::from_str(stdout.trim())
-        .with_context(|| format!("parsing contract-call output: {}", stdout.trim()))?;
+        .with_context(|| format!("parsing wallet send output: {}", stdout.trim()))?;
     extract_tx_hash(&result)
 }
 

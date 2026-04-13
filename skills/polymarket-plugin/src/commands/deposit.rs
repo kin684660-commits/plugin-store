@@ -298,6 +298,28 @@ pub async fn run(
     }
     let can_auto_send = BRIDGE_ONCHAINOS_CHAIN_IDS.contains(&chain_id);
 
+    // Sentinel address means native coin (ETH, BNB, etc.).
+    // The bridge backend only monitors ERC-20 Transfer events and will NOT
+    // detect a plain native-value transfer to the deposit EOA — funds would
+    // be lost. Block this early (before any on-chain action) and direct the
+    // user to the wrapped ERC-20 equivalent.
+    let is_native = asset.token.address.to_lowercase()
+        == "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+    if is_native {
+        let wrapped_sym = format!("W{}", asset.token.symbol.to_uppercase());
+        let alt = assets
+            .iter()
+            .find(|a| a.chain_id == chain_id && a.token.symbol.to_uppercase() == wrapped_sym)
+            .map(|a| a.token.symbol.as_str())
+            .unwrap_or("USDC");
+        bail!(
+            "Native {} cannot be deposited directly — the bridge only detects ERC-20 transfers.\n\
+             Use the wrapped ERC-20 version instead:\n\
+               polymarket deposit --amount {} --chain {} --token {}",
+            asset.token.symbol, amount_f, chain, alt
+        );
+    }
+
     // Get bridge deposit address
     eprintln!("[polymarket] Getting bridge deposit address for proxy wallet {}...", proxy_wallet);
     let bridge_deposit_addr = crate::api::bridge_get_deposit_address(&client, proxy_wallet).await?;
@@ -333,25 +355,13 @@ pub async fn run(
             "[polymarket] Sending {} {} on {} → bridge deposit address {}...",
             amount_f, asset.token.symbol, asset.chain_name, bridge_deposit_addr
         );
-        // ETH sentinel address means native coin — use native transfer instead of ERC-20
-        let is_native = asset.token.address.to_lowercase()
-            == "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
-        let hash = if is_native {
-            crate::onchainos::transfer_native_on_chain(
-                oc_chain,
-                &bridge_deposit_addr,
-                amount_raw,
-            )
-            .await?
-        } else {
-            crate::onchainos::transfer_erc20_on_chain(
-                oc_chain,
-                &asset.token.address,
-                &bridge_deposit_addr,
-                amount_raw,
-            )
-            .await?
-        };
+        let hash = crate::onchainos::transfer_erc20_on_chain(
+            oc_chain,
+            &asset.token.address,
+            &bridge_deposit_addr,
+            amount_raw,
+        )
+        .await?;
         eprintln!("[polymarket] Sent. tx_hash: {}", hash);
         Some(hash)
     } else {
