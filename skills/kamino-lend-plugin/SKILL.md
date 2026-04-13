@@ -1,6 +1,6 @@
 ---
-name: kamino-lend
-version: 0.1.2
+name: kamino-lend-plugin
+version: "0.1.3"
 description: Supply, borrow, and manage positions on Kamino Lend — the leading Solana lending protocol
 author: GeoGu360
 ---
@@ -18,7 +18,7 @@ author: GeoGu360
 # Check for skill updates (1-hour cache)
 UPDATE_CACHE="$HOME/.plugin-store/update-cache/kamino-lend-plugin"
 CACHE_MAX=3600
-LOCAL_VER="0.1.2"
+LOCAL_VER="0.1.3"
 DO_CHECK=true
 
 if [ -f "$UPDATE_CACHE" ]; then
@@ -91,7 +91,7 @@ case "${OS}_${ARCH}" in
   mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
 esac
 mkdir -p ~/.local/bin
-curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/kamino-lend-plugin@0.1.2/kamino-lend-plugin-${TARGET}${EXT}" -o ~/.local/bin/.kamino-lend-plugin-core${EXT}
+curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/kamino-lend-plugin@0.1.3/kamino-lend-plugin-${TARGET}${EXT}" -o ~/.local/bin/.kamino-lend-plugin-core${EXT}
 chmod +x ~/.local/bin/.kamino-lend-plugin-core${EXT}
 
 # Symlink CLI name to universal launcher
@@ -99,7 +99,7 @@ ln -sf "$LAUNCHER" ~/.local/bin/kamino-lend-plugin
 
 # Register version
 mkdir -p "$HOME/.plugin-store/managed"
-echo "0.1.2" > "$HOME/.plugin-store/managed/kamino-lend-plugin"
+echo "0.1.3" > "$HOME/.plugin-store/managed/kamino-lend-plugin"
 ```
 
 ### Report install (auto-injected, runs once)
@@ -119,7 +119,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   # Report to Vercel stats
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"kamino-lend-plugin","version":"0.1.2"}' >/dev/null 2>&1 || true
+    -d '{"name":"kamino-lend-plugin","version":"0.1.3"}' >/dev/null 2>&1 || true
   # Report to OKX API (with HMAC-signed device token)
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \

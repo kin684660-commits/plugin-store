@@ -1,11 +1,11 @@
 ---
-name: kamino-liquidity
+name: kamino-liquidity-plugin
 description: "Kamino Liquidity KVault earn vaults on Solana. Deposit tokens to earn yield, withdraw shares, and track positions. Trigger phrases: Kamino vault, Kamino liquidity, deposit to Kamino, Kamino earn, KVault, Kamino yield vault. Chinese: Kamino流动性, Kamino保险库, 存入Kamino, Kamino赚取收益"
 license: MIT
 metadata:
   author: GeoGu360
-  version: "1.3.0"
-version: 0.1.1
+  version: "0.1.2"
+version: "0.1.2"
 author: GeoGu360
 ---
 
@@ -22,7 +22,7 @@ author: GeoGu360
 # Check for skill updates (1-hour cache)
 UPDATE_CACHE="$HOME/.plugin-store/update-cache/kamino-liquidity-plugin"
 CACHE_MAX=3600
-LOCAL_VER="0.1.1"
+LOCAL_VER="0.1.2"
 DO_CHECK=true
 
 if [ -f "$UPDATE_CACHE" ]; then
@@ -95,7 +95,7 @@ case "${OS}_${ARCH}" in
   mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
 esac
 mkdir -p ~/.local/bin
-curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/kamino-liquidity-plugin@0.1.1/kamino-liquidity-plugin-${TARGET}${EXT}" -o ~/.local/bin/.kamino-liquidity-plugin-core${EXT}
+curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/kamino-liquidity-plugin@0.1.2/kamino-liquidity-plugin-${TARGET}${EXT}" -o ~/.local/bin/.kamino-liquidity-plugin-core${EXT}
 chmod +x ~/.local/bin/.kamino-liquidity-plugin-core${EXT}
 
 # Symlink CLI name to universal launcher
@@ -103,7 +103,7 @@ ln -sf "$LAUNCHER" ~/.local/bin/kamino-liquidity-plugin
 
 # Register version
 mkdir -p "$HOME/.plugin-store/managed"
-echo "0.1.1" > "$HOME/.plugin-store/managed/kamino-liquidity-plugin"
+echo "0.1.2" > "$HOME/.plugin-store/managed/kamino-liquidity-plugin"
 ```
 
 ### Report install (auto-injected, runs once)
@@ -123,7 +123,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   # Report to Vercel stats
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"kamino-liquidity-plugin","version":"0.1.1"}' >/dev/null 2>&1 || true
+    -d '{"name":"kamino-liquidity-plugin","version":"0.1.2"}' >/dev/null 2>&1 || true
   # Report to OKX API (with HMAC-signed device token)
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \

@@ -1,7 +1,7 @@
 ---
-name: compound-v3
+name: compound-v3-plugin
 description: "Compound V3 (Comet) lending plugin: supply collateral, borrow/repay the base asset, and claim COMP rewards. Trigger phrases: compound supply, compound borrow, compound repay, compound withdraw, compound rewards, compound position, compound market."
-version: "0.2.2"
+version: "0.2.3"
 author: "skylavis-sky"
 tags:
   - lending
@@ -24,7 +24,7 @@ tags:
 # Check for skill updates (1-hour cache)
 UPDATE_CACHE="$HOME/.plugin-store/update-cache/compound-v3-plugin"
 CACHE_MAX=3600
-LOCAL_VER="0.2.2"
+LOCAL_VER="0.2.3"
 DO_CHECK=true
 
 if [ -f "$UPDATE_CACHE" ]; then
@@ -97,7 +97,7 @@ case "${OS}_${ARCH}" in
   mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
 esac
 mkdir -p ~/.local/bin
-curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/compound-v3-plugin@0.2.2/compound-v3-plugin-${TARGET}${EXT}" -o ~/.local/bin/.compound-v3-plugin-core${EXT}
+curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/compound-v3-plugin@0.2.3/compound-v3-plugin-${TARGET}${EXT}" -o ~/.local/bin/.compound-v3-plugin-core${EXT}
 chmod +x ~/.local/bin/.compound-v3-plugin-core${EXT}
 
 # Symlink CLI name to universal launcher
@@ -105,7 +105,7 @@ ln -sf "$LAUNCHER" ~/.local/bin/compound-v3-plugin
 
 # Register version
 mkdir -p "$HOME/.plugin-store/managed"
-echo "0.2.2" > "$HOME/.plugin-store/managed/compound-v3-plugin"
+echo "0.2.3" > "$HOME/.plugin-store/managed/compound-v3-plugin"
 ```
 
 ### Report install (auto-injected, runs once)
@@ -125,7 +125,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   # Report to Vercel stats
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"compound-v3-plugin","version":"0.2.2"}' >/dev/null 2>&1 || true
+    -d '{"name":"compound-v3-plugin","version":"0.2.3"}' >/dev/null 2>&1 || true
   # Report to OKX API (with HMAC-signed device token)
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \
