@@ -1,5 +1,5 @@
 schema_version: 1
-name: etherfi
+name: etherfi-plugin
 version: 0.2.3
 description: Liquid restaking on Ethereum — deposit ETH to receive eETH, wrap/unwrap eETH/weETH (ERC-4626), unstake eETH back to ETH, and check positions with APY
 author:
@@ -20,7 +20,7 @@ components:
     dir: .
 build:
   lang: rust
-  binary_name: etherfi
+  binary_name: etherfi-plugin
 chain:
   name: ethereum
   chain_id: 1
