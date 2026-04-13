@@ -1,5 +1,5 @@
 schema_version: 1
-name: compound-v3
+name: compound-v3-plugin
 version: "0.2.1"
 description: "Compound V3 (Comet) lending plugin: supply collateral, borrow/repay the base asset, and claim COMP rewards"
 author:
@@ -20,7 +20,7 @@ components:
 
 build:
   lang: rust
-  binary_name: compound-v3
+  binary_name: compound-v3-plugin
 
 api_calls:
   - "https://ethereum.publicnode.com"

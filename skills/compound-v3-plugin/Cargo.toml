@@ -4,7 +4,7 @@ version = "0.2.1"
 edition = "2021"
 
 [[bin]]
-name = "compound-v3"
+name = "compound-v3-plugin"
 path = "src/main.rs"
 
 [dependencies]
