@@ -9,9 +9,9 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(
-    name = "meteora",
+    name = "meteora-plugin",
     about = "Meteora DLMM plugin — query pools, get quotes, check positions, manage liquidity, and execute swaps on Solana",
-    version = "0.2.0"
+    version = env!("CARGO_PKG_VERSION")
 )]
 struct Cli {
     /// Simulate without broadcasting (dry run)
