@@ -2,7 +2,7 @@
 name: wallet-tracker-mcap
 version: "1.0.0"
 description: >
-  Wallet Copy-Trade Bot v1.0 — monitors target Solana wallets for meme token
+  Wallet Copy-Trade Bot v1.0 -- monitors target Solana wallets for meme token
   trades and auto-mirrors buys/sells with safety gates. Two follow modes:
   MC_TARGET (wait for market cap proof) or INSTANT. Tiered take-profit,
   trailing stop, mirror sell, time stop, and 4-tier risk grading.
@@ -14,7 +14,7 @@ triggers: >
   wallet sniper, smart money follow, whale tracker, mcap target
 ---
 
-# 钱包跟单策略 v1.0 — Wallet Copy-Trade Bot
+# 钱包跟单策略 v1.0 -- Wallet Copy-Trade Bot
 
 > 本策略为真实交易机器人。使用前确保已理解风险，建议先以 PAPER 模式测试。
 
@@ -138,7 +138,7 @@ onchainos wallet addresses --chain 501   # 确认 Solana 地址
 ### Step 1: 展示策略简介
 
 ```
-👁️ 钱包跟单策略 v1.0 — Wallet Copy-Trade Bot
+👁️ 钱包跟单策略 v1.0 -- Wallet Copy-Trade Bot
 
 本策略监控指定钱包地址的 meme 代币持仓变化。
 当目标钱包买入新代币时，经过安全检查后自动跟买。
@@ -166,19 +166,19 @@ onchainos wallet addresses --chain 501   # 确认 Solana 地址
 
 使用 AskUserQuestion 依次确认：
 
-**Q1 — 目标钱包地址**
+**Q1 -- 目标钱包地址**
 - 用户提供要跟踪的 Solana 钱包地址
 - 支持多个地址（逗号分隔）
 
 → 映射：`TARGET_WALLETS = ["地址1", "地址2"]`
 
-**Q2 — 运行模式**
+**Q2 -- 运行模式**
 - 🧪 模拟模式 (PAPER)：只看信号，不花钱（推荐新手）
 - 💰 实盘模式 (LIVE)：真实 SOL 交易
 
 → 映射：`MODE = "paper"/"live"`
 
-**Q3 — 跟单模式**
+**Q3 -- 跟单模式**
 - ⏳ 市值触发 (MC_TARGET)：等 MC 达到目标再买（更安全）
 - ⚡ 即时跟买 (INSTANT)：钱包买了就跟（更快但风险更高）
 
@@ -186,7 +186,7 @@ onchainos wallet addresses --chain 501   # 确认 Solana 地址
 
 如果选了 MC_TARGET，追问目标市值（默认 $500K）
 
-**Q4 — 风险偏好**
+**Q4 -- 风险偏好**
 - 🛡️ 保守：小仓位，紧止损
 - ⚖️ 默认：平衡配置（推荐）
 - 🔥 激进：大仓位，宽止损
@@ -222,7 +222,7 @@ TARGET_WALLETS    = []            # 要跟踪的 Solana 钱包地址列表
 # ── 跟单模式 ────────────────────────────────────────────────────────────
 FOLLOW_MODE       = "mc_target"   # "mc_target" / "instant"
 MC_TARGET_USD     = 500_000       # MC_TARGET 模式下的目标市值 ($)
-MC_MAX_USD        = 50_000_000    # 市值上限 — 超过此值不跟买 ($)
+MC_MAX_USD        = 50_000_000    # 市值上限 -- 超过此值不跟买 ($)
 
 # ── 卖出跟踪 ────────────────────────────────────────────────────────────
 MIRROR_SELL       = True          # 目标钱包卖出时是否同步卖出
@@ -266,7 +266,7 @@ PAUSE_CONSEC_SEC  = 600           # 暂停时长 (秒)
 SESSION_STOP_SOL  = 0.10          # 累计亏损 → 停止交易
 
 # ── 轮询 ────────────────────────────────────────────────────────────────
-POLL_INTERVAL     = 30            # 钱包监控轮询周期 (秒) — 别太频繁, 避免限流
+POLL_INTERVAL     = 30            # 钱包监控轮询周期 (秒) -- 别太频繁, 避免限流
 MONITOR_INTERVAL  = 15            # 持仓 + MC 检查周期 (秒)
 HEALTH_CHECK_SEC  = 300           # 钱包审计周期 (秒)
 
@@ -280,7 +280,7 @@ DASHBOARD_PORT    = 3248
 
 ```
 wallet_tracker.py（单文件 Bot）
-├── onchainos CLI（数据 + 执行 + 安全 — 无 API Key）
+├── onchainos CLI（数据 + 执行 + 安全 -- 无 API Key）
 │
 ├── wallet_poll_loop()        ← 后台线程, 每 POLL_INTERVAL 秒
 │   ├── get_wallet_holdings()      获取目标钱包当前持仓
@@ -411,7 +411,7 @@ wallet_tracker.py（单文件 Bot）
 
 ## Iron Rules（不可违反）
 
-1. **NEVER** 盲跟 — 每个代币必须过安全检查, 不管目标钱包是谁。
+1. **NEVER** 盲跟 -- 每个代币必须过安全检查, 不管目标钱包是谁。
 2. **NEVER** 单次 balance=0 就认为钱包卖了。Solana RPC 有延迟, 必须连续 3 次确认。
 3. **NEVER** poll 频率低于 15 秒。onchainos API 有限流, 太频繁会被 ban。
 4. **写 positions.json 前必须持有 state lock。**

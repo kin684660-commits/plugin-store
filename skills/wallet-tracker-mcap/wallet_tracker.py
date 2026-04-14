@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-wallet_tracker.py — 钱包跟单策略 v1.0 (Wallet Copy-Trade Bot)
+wallet_tracker.py -- 钱包跟单策略 v1.0 (Wallet Copy-Trade Bot)
 监控目标钱包持仓变化，自动跟买/跟卖，onchainos CLI 驱动。
 
 用法:
@@ -24,7 +24,7 @@ try:
     HAS_RISK_CHECK = True
 except ImportError:
     HAS_RISK_CHECK = False
-    print("  ⚠️  risk_check.py not found — running without risk module")
+    print("  ⚠️  risk_check.py not found -- running without risk module")
 
 # ── Constants ──────────────────────────────────────────────────────────
 _ONCHAINOS = os.path.expanduser("~/.local/bin/onchainos")
@@ -327,7 +327,7 @@ def query_single_token_balance(token_addr: str) -> float:
         with pos_lock:
             pos = positions.get(token_addr, {})
             return pos.get("token_amount", 0)
-    # Use all-balances (onchainos >= 2.2) — response nested under tokenAssets
+    # Use all-balances (onchainos >= 2.2) -- response nested under tokenAssets
     r = _onchainos("portfolio", "all-balances",
                    "--address", WALLET_ADDRESS,
                    "--chains", C.CHAIN)
@@ -517,12 +517,12 @@ def execute_buy(token_addr: str, sym: str, source_wallet: str, trigger: str):
     try:
         with pos_lock:
             if token_addr in positions:
-                log(f"⛔ {sym} already in positions — skip")
+                log(f"⛔ {sym} already in positions -- skip")
                 return
 
         ok, reason = can_enter(C.BUY_AMOUNT)
         if not ok:
-            log(f"⛔ {sym} — {reason}")
+            log(f"⛔ {sym} -- {reason}")
             return
 
         # Safety check
@@ -705,7 +705,7 @@ def execute_sell(token_addr: str, sell_pct: float, reason: str):
 
         if onchain_bal <= 0:
             if onchain_bal == 0:
-                # Could be RPC delay — increment zero counter
+                # Could be RPC delay -- increment zero counter
                 with pos_lock:
                     if token_addr in positions:
                         zbc = positions[token_addr].get("zero_balance_count", 0) + 1
@@ -904,7 +904,7 @@ def _on_wallet_buy(token_addr: str, token_info: dict, wallet_addr: str):
     elif C.FOLLOW_MODE == "mc_target":
         # Add to watch list, buy when token's TOTAL market cap hits conditions.
         # Two conditions (both must be met):
-        #   1. MC >= MC_TARGET_USD  (floor — minimum total market cap)
+        #   1. MC >= MC_TARGET_USD  (floor -- minimum total market cap)
         #   2. MC has grown >= MC_GROWTH_PCT from detection (momentum confirmation)
         # NOTE: MC = token's total market cap (price × total supply),
         #       NOT the wallet's holding value.
@@ -921,7 +921,7 @@ def _on_wallet_buy(token_addr: str, token_info: dict, wallet_addr: str):
         growth_met = C.MC_GROWTH_PCT <= 0  # if no growth required, auto-pass
 
         if floor_met and growth_met:
-            # Already above floor & no growth required — buy now
+            # Already above floor & no growth required -- buy now
             threading.Thread(
                 target=execute_buy,
                 args=(token_addr, sym, wallet_addr, f"MC_TARGET(already ${current_mc:,.0f})"),
@@ -1001,11 +1001,11 @@ def wallet_poll_loop():
                     prev = wallet_snapshots.get(wallet_addr, {})
 
                 if not prev:
-                    # First run — just save snapshot, don't trigger buys
+                    # First run -- just save snapshot, don't trigger buys
                     with snap_lock:
                         wallet_snapshots[wallet_addr] = current
                         save_snapshots()
-                    log(f"📸 Initial snapshot for {wallet_addr[:8]}… — {len(current)} tokens")
+                    log(f"📸 Initial snapshot for {wallet_addr[:8]}… -- {len(current)} tokens")
                     continue
 
                 # Detect NEW buys
@@ -1080,7 +1080,7 @@ def check_mc_targets():
                 ).start()
 
             elif mc > C.MC_MAX_USD:
-                log(f"⛔ {sym} MC ${mc:,.0f} > cap — removing from watch")
+                log(f"⛔ {sym} MC ${mc:,.0f} > cap -- removing from watch")
                 with watch_lock:
                     watch_list.pop(addr, None)
                     save_watch_list()
@@ -1355,7 +1355,7 @@ def start_dashboard():
 def _wallet_preflight() -> str:
     """Check wallet login and return Solana address."""
     if C.MODE == "paper":
-        log("📝 PAPER MODE — no wallet needed")
+        log("📝 PAPER MODE -- no wallet needed")
         return "PAPER_MODE_NO_WALLET"
 
     # Check wallet status
@@ -1472,7 +1472,7 @@ def interactive_setup():
     """Interactive first-run setup. Asks user for wallet + params, writes to config."""
     print()
     print("=" * 60)
-    print("  👁️  钱包跟单策略 v1.0 — Wallet Copy-Trade Bot")
+    print("  👁️  钱包跟单策略 v1.0 -- Wallet Copy-Trade Bot")
     print("  ── 首次启动设置 ──")
     print("=" * 60)
     print()
@@ -1500,8 +1500,8 @@ def interactive_setup():
 
     # ── Q2: Follow mode ──
     print("  📋 Step 2/5: 跟单模式")
-    print("  [1] ⏳ 市值触发 (MC_TARGET) — 等代币总市值(Token MC)到目标值再买 (推荐)")
-    print("  [2] ⚡ 即时跟买 (INSTANT) — 钱包买了就跟")
+    print("  [1] ⏳ 市值触发 (MC_TARGET) -- 等代币总市值(Token MC)到目标值再买 (推荐)")
+    print("  [2] ⚡ 即时跟买 (INSTANT) -- 钱包买了就跟")
     print()
     choice = input("  选择 [1/2] (默认 1) > ").strip()
     if choice == "2":
@@ -1586,16 +1586,16 @@ def interactive_setup():
 
     # ── Q5: Mode ──
     print("  📋 Step 5/5: 运行模式")
-    print("  [1] 🧪 模拟模式 (PAPER) — 只看信号，不花钱 (推荐新手)")
-    print("  [2] 💰 实盘模式 (LIVE) — 真实 SOL 交易")
+    print("  [1] 🧪 模拟模式 (PAPER) -- 只看信号，不花钱 (推荐新手)")
+    print("  [2] 💰 实盘模式 (LIVE) -- 真实 SOL 交易")
     print()
     choice = input("  选择 [1/2] (默认 1) > ").strip()
     if choice == "2":
         C.MODE = "live"
-        print("  ✅ 实盘模式 — 请确保钱包有足够 SOL！")
+        print("  ✅ 实盘模式 -- 请确保钱包有足够 SOL！")
     else:
         C.MODE = "paper"
-        print("  ✅ 模拟模式 — 只观察不交易")
+        print("  ✅ 模拟模式 -- 只观察不交易")
     print()
 
     # Auto-unpause since they just set everything up
@@ -1612,7 +1612,7 @@ def main():
 
     print()
     print("=" * 60)
-    print("  👁️  钱包跟单策略 v1.0 — Wallet Copy-Trade Bot")
+    print("  👁️  钱包跟单策略 v1.0 -- Wallet Copy-Trade Bot")
     print("=" * 60)
     print()
 
@@ -1620,7 +1620,7 @@ def main():
     if not C.TARGET_WALLETS:
         interactive_setup()
     else:
-        # Wallets already set — ask if they want to reconfigure
+        # Wallets already set -- ask if they want to reconfigure
         print(f"  已有配置: {len(C.TARGET_WALLETS)} 个目标钱包")
         for w in C.TARGET_WALLETS:
             print(f"    {w[:12]}…{w[-6:]}")
@@ -1684,7 +1684,7 @@ def main():
     for t in threads:
         t.start()
 
-    # Main thread — keep alive
+    # Main thread -- keep alive
     try:
         while True:
             time.sleep(1)

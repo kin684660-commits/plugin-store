@@ -1,6 +1,6 @@
 {
   "name": "wallet-tracker-mcap",
-  "description": "Wallet copy-trade bot — monitors target Solana wallets and auto-mirrors meme token buys/sells with MC target gating, tiered TP, trailing stop, and 4-tier risk grading",
+  "description": "Wallet copy-trade bot -- monitors target Solana wallets and auto-mirrors meme token buys/sells with MC target gating, tiered TP, trailing stop, and 4-tier risk grading",
   "version": "1.0.0",
   "author": {
     "name": "victorlee",

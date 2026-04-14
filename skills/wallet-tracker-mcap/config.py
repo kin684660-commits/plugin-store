@@ -1,5 +1,5 @@
 """
-钱包跟单策略 v1.0 — Wallet Copy-Trade Bot 配置文件
+钱包跟单策略 v1.0 -- Wallet Copy-Trade Bot 配置文件
 修改此文件调整策略参数，无需改动 wallet_tracker.py
 """
 
@@ -13,9 +13,9 @@ TARGET_WALLETS    = []            # 要跟踪的 Solana 钱包地址列表
 
 # ── 跟单模式 ────────────────────────────────────────────────────────────
 FOLLOW_MODE       = "mc_target"   # "mc_target" / "instant"
-MC_TARGET_USD     = 8_888         # MC_TARGET: 代币总市值门槛 ($) — 低于此值不跟买
+MC_TARGET_USD     = 8_888         # MC_TARGET: 代币总市值门槛 ($) -- 低于此值不跟买
 MC_GROWTH_PCT     = 0             # MC_TARGET: 钱包买入后代币总市值需涨 N% 才跟买 (0=不等涨幅)
-MC_MAX_USD        = 50_000_000    # 市值上限 — 超过此值不跟买 ($)
+MC_MAX_USD        = 50_000_000    # 市值上限 -- 超过此值不跟买 ($)
 
 # ── 卖出跟踪 ────────────────────────────────────────────────────────────
 MIRROR_SELL       = True          # 目标钱包卖出时是否同步卖出

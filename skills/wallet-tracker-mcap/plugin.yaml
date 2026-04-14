@@ -1,7 +1,7 @@
 schema_version: 1
 name: "wallet-tracker-mcap"
 version: "1.0.0"
-description: "Wallet copy-trade bot — monitors target Solana wallets and auto-mirrors meme token buys/sells with MC target gating, tiered TP, trailing stop, and 4-tier risk grading"
+description: "Wallet copy-trade bot -- monitors target Solana wallets and auto-mirrors meme token buys/sells with MC target gating, tiered TP, trailing stop, and 4-tier risk grading"
 author:
   name: "victorlee"
   github: "VibeCodeDaddy69"
