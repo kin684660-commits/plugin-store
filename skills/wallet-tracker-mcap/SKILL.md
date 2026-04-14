@@ -10,443 +10,444 @@ description: >
 updated: 2026-04-14
 triggers: >
   wallet tracker, copy trade, wallet copy, follow wallet, mirror trade,
-  wallet monitor, 跟单, 钱包跟踪, 钱包监控, 抄单, 跟买跟卖,
-  wallet sniper, smart money follow, whale tracker, mcap target
+  wallet monitor, wallet sniper, smart money follow, whale tracker, mcap target,
+  gen dan, qian bao gen zong, qian bao jian kong, chao dan, gen mai gen mai
 ---
 
-# 钱包跟单策略 v1.0 -- Wallet Copy-Trade Bot
+# Wallet Copy-Trade Bot v1.0
 
-> 本策略为真实交易机器人。使用前确保已理解风险，建议先以 PAPER 模式测试。
+> This is a real trading bot. Understand the risks before use. Test in PAPER mode first.
 
 ---
 
-## 文件结构
+## File Structure
 
 ```
 WalletTracker/
-├── skill.md              ← 本文件（策略说明）
-├── config.py             ← 所有可调参数（修改参数只改这里）
-├── wallet_tracker.py     ← 策略主程序
-├── risk_check.py         ← 共享风控模块
-├── dashboard.html        ← Web Dashboard UI
-└── state/                ← [自动生成] 运行时数据
-    ├── positions.json
-    ├── trades.json
-    ├── tracked_tokens.json   ← 正在跟踪的代币列表
-    └── wallet_snapshots.json ← 目标钱包持仓快照
+-- SKILL.md              <-- This file (strategy docs)
+-- config.py             <-- All tunable parameters (only edit this)
+-- wallet_tracker.py     <-- Main bot
+-- risk_check.py         <-- Shared risk assessment module
+-- dashboard.html        <-- Web Dashboard UI
++-- state/               <-- [Auto-generated] Runtime data
+    -- positions.json
+    -- trades.json
+    -- tracked_tokens.json   <-- Tokens currently being watched
+    +-- wallet_snapshots.json <-- Target wallet holding snapshots
 ```
 
 ---
 
-## 策略逻辑
+## Strategy Logic
 
-### 核心思路
+### Core Flow
 
 ```
-     ┌──────────────────────────────┐
-     │  Poll target wallet holdings │
-     │  (every POLL_INTERVAL sec)   │
-     └──────────────┬───────────────┘
-                    │
-                    ▼
-     ┌──────────────────────────────┐
-     │  Compare with last snapshot  │
-     │  Detect: NEW buys / SELLs   │
-     └──────┬───────────────┬───────┘
-            │               │
+     +------------------------------+
+     |  Poll target wallet holdings |
+     |  (every POLL_INTERVAL sec)   |
+     +--------------+---------------+
+                    |
+                    v
+     +------------------------------+
+     |  Compare with last snapshot  |
+     |  Detect: NEW buys / SELLs   |
+     +------+---------------+------+
+            |               |
        NEW TOKEN         TOKEN SOLD
        detected          by wallet
-            │               │
-            ▼               ▼
-     ┌─────────────┐ ┌──────────────┐
-     │ Add to       │ │ If we hold   │
-     │ tracked list │ │ same token → │
-     │              │ │ mirror sell  │
-     └──────┬──────┘ └──────────────┘
-            │
-            ▼
-     ┌──────────────────────────────┐
-     │  Safety checks:              │
-     │  - risk_check pre-trade      │
-     │  - MC / Liquidity / Holders  │
-     │  - Dev / Bundler / Honeypot  │
-     └──────────────┬───────────────┘
-                    │
-              ┌─────┴─────┐
-              │           │
+            |               |
+            v               v
+     +-------------+ +--------------+
+     | Add to       | | If we hold   |
+     | tracked list | | same token > |
+     |              | | mirror sell  |
+     +------+------+ +--------------+
+            |
+            v
+     +------------------------------+
+     |  Safety checks:              |
+     |  - risk_check pre-trade      |
+     |  - MC / Liquidity / Holders  |
+     |  - Dev / Bundler / Honeypot  |
+     +--------------+---------------+
+                    |
+              +-----+-----+
+              |           |
          MODE: INSTANT  MODE: MC_TARGET
-              │           │
-              ▼           ▼
-     ┌────────────┐ ┌────────────────┐
-     │ Buy now    │ │ Add to watch.  │
-     │ immediately│ │ Buy when MC    │
-     │            │ │ hits target    │
-     └────────────┘ └────────────────┘
-                    │
+              |           |
+              v           v
+     +------------+ +----------------+
+     | Buy now    | | Add to watch.  |
+     | immediately| | Buy when MC    |
+     |            | | hits target    |
+     +------------+ +----------------+
+                    |
               (price monitor loop
                checks MC every
                MONITOR_INTERVAL)
-                    │
-                    ▼
-              MC hits target → BUY
+                    |
+                    v
+              MC hits target > BUY
 ```
 
-### 两种跟单模式
+### Two Follow Modes
 
-| 模式 | 说明 | 适合场景 |
-|------|------|---------|
-| **INSTANT** | 目标钱包买入 → 安全检查通过 → 立即跟买 | 信任目标钱包的判断，想第一时间跟进 |
-| **MC_TARGET** | 目标钱包买入 → 安全检查通过 → 加入观察列表 → MC 达到目标值时才买入 | 想等代币有一定热度/验证后再进场（九三的需求） |
+| Mode | Description | Best For |
+|------|-------------|----------|
+| **INSTANT** | Target wallet buys > safety check passes > buy immediately | Trusting the target wallet, want to follow ASAP |
+| **MC_TARGET** | Target wallet buys > safety check passes > add to watch list > buy when MC hits target | Wait for token to prove itself before entering (safer) |
 
-### 卖出逻辑（三种触发）
+### Exit Logic (5 Triggers)
 
-| 触发 | 说明 |
-|------|------|
-| **MIRROR_SELL** | 目标钱包卖出该代币 → 我们也卖（可配置：跟卖 100% 或按比例） |
-| **STOP_LOSS** | 持仓亏损超过 STOP_LOSS_PCT → 止损卖出 |
-| **TAKE_PROFIT** | 持仓盈利超过 TP 阈值 → 止盈卖出（梯度止盈） |
-| **TIME_STOP** | 持仓超过 MAX_HOLD_HOURS → 时间止损 |
+| Trigger | Description |
+|---------|-------------|
+| **MIRROR_SELL** | Target wallet sells the token > we sell too (configurable: 100% or partial) |
+| **STOP_LOSS** | Position loss exceeds STOP_LOSS_PCT > hard stop |
+| **TAKE_PROFIT** | Position profit hits TP tier > tiered partial exits |
+| **TRAILING_STOP** | Peak PnL >= TRAILING_ACTIVATE, then drops TRAILING_DROP from peak |
+| **TIME_STOP** | Held longer than MAX_HOLD_HOURS > time-based exit |
 
 ---
 
-## 前置要求
+## Prerequisites
 
-### 1. 安装 onchainos CLI (>= 2.1.0)
+### 1. Install onchainos CLI (>= 2.1.0)
 
 ```bash
 onchainos --version
 ```
 
-### 2. 登录 Agentic Wallet (TEE 签名)
+### 2. Login to Agentic Wallet (TEE signing)
 
 ```bash
 onchainos wallet login <your-email>
-onchainos wallet status        # → loggedIn: true
-onchainos wallet addresses --chain 501   # 确认 Solana 地址
+onchainos wallet status        # > loggedIn: true
+onchainos wallet addresses --chain 501   # Confirm Solana address
 ```
 
-### 3. 无需 pip install
+### 3. No pip install needed
 
-本策略仅依赖 Python 标准库 + onchainos CLI。
+This bot uses only Python stdlib + onchainos CLI.
 
 ---
 
-## Claude 启动交互协议
+## Claude Launch Protocol
 
-> **当用户要求启动本策略时，Claude 必须按以下流程执行，不得跳过直接启动。**
+> **When the user asks to start this strategy, Claude must follow this flow. Do not skip steps.**
 
-### Step 1: 展示策略简介
+### Step 1: Show Strategy Overview
 
 ```
-👁️ 钱包跟单策略 v1.0 -- Wallet Copy-Trade Bot
+Wallet Copy-Trade Bot v1.0
 
-本策略监控指定钱包地址的 meme 代币持仓变化。
-当目标钱包买入新代币时，经过安全检查后自动跟买。
-当目标钱包卖出时，可同步卖出。
+This bot monitors target wallet addresses for meme token holdings changes.
+When the target wallet buys a new token, it auto-follows after safety checks.
+When the target wallet sells, it can mirror-sell.
 
-支持两种模式：
-  即时跟买 (INSTANT)：钱包买了就跟
-  市值触发 (MC_TARGET)：等代币 MC 达到目标值再买
+Two modes:
+  Instant Follow (INSTANT): wallet buys, we follow immediately
+  MC Target (MC_TARGET): wait for token MC to hit target before buying
 
-⚠️ 风险提示：跟单策略依赖目标钱包的判断，
-   目标钱包亏损你也会亏损。建议先用 Paper 模式观察。
+Risk warning: Copy-trading depends on the target wallet's judgment.
+If the target wallet loses, you lose too. Test in Paper mode first.
 
-默认参数：
-  模式：      PAPER（模拟，不花钱）
-  跟单模式：  MC_TARGET（市值触发）
-  目标市值：  $500,000
-  单笔买入：  0.03 SOL
-  最大持仓：  5 个
-  止损：      -20%
-  止盈：      +15% / +30% / +50%（梯度）
-  最大持仓时间：6 小时
+Defaults:
+  Mode:           PAPER (simulated, no real money)
+  Follow mode:    MC_TARGET (market cap gated)
+  MC target:      $500,000
+  Buy amount:     0.03 SOL
+  Max positions:  5
+  Stop loss:      -20%
+  Take profit:    +15% / +30% / +50% (tiered)
+  Max hold time:  6 hours
 ```
 
-### Step 2: 询问用户配置（4 个问题）
+### Step 2: Ask User Configuration (4 Questions)
 
-使用 AskUserQuestion 依次确认：
+Use AskUserQuestion to confirm:
 
-**Q1 -- 目标钱包地址**
-- 用户提供要跟踪的 Solana 钱包地址
-- 支持多个地址（逗号分隔）
+**Q1 -- Target Wallet Addresses**
+- User provides Solana wallet address(es) to track
+- Supports multiple addresses (comma-separated)
 
-→ 映射：`TARGET_WALLETS = ["地址1", "地址2"]`
+> Maps to: `TARGET_WALLETS = ["addr1", "addr2"]`
 
-**Q2 -- 运行模式**
-- 🧪 模拟模式 (PAPER)：只看信号，不花钱（推荐新手）
-- 💰 实盘模式 (LIVE)：真实 SOL 交易
+**Q2 -- Running Mode**
+- Paper Mode (PAPER): signals only, no real money (recommended for new users)
+- Live Mode (LIVE): real SOL trades
 
-→ 映射：`MODE = "paper"/"live"`
+> Maps to: `MODE = "paper"/"live"`
 
-**Q3 -- 跟单模式**
-- ⏳ 市值触发 (MC_TARGET)：等 MC 达到目标再买（更安全）
-- ⚡ 即时跟买 (INSTANT)：钱包买了就跟（更快但风险更高）
+**Q3 -- Follow Mode**
+- MC Target (MC_TARGET): wait for MC to hit target before buying (safer)
+- Instant (INSTANT): follow immediately (faster but riskier)
 
-→ 映射：`FOLLOW_MODE = "mc_target"/"instant"`
+> Maps to: `FOLLOW_MODE = "mc_target"/"instant"`
 
-如果选了 MC_TARGET，追问目标市值（默认 $500K）
+If MC_TARGET selected, ask for target market cap (default $500K)
 
-**Q4 -- 风险偏好**
-- 🛡️ 保守：小仓位，紧止损
-- ⚖️ 默认：平衡配置（推荐）
-- 🔥 激进：大仓位，宽止损
+**Q4 -- Risk Profile**
+- Conservative: small size, tight stops
+- Default: balanced (recommended)
+- Aggressive: larger size, wider stops
 
-→ 映射预设：
+> Preset mappings:
 
-| 偏好 | BUY_AMOUNT | STOP_LOSS_PCT | TP_TIERS | MAX_HOLD_HOURS |
-|------|-----------|---------------|----------|----------------|
-| 保守 | 0.02 SOL  | -12%          | (10,0.30),(20,0.40),(30,1.00) | 4 |
-| 默认 | 0.03 SOL  | -20%          | (15,0.30),(30,0.40),(50,1.00) | 6 |
-| 激进 | 0.05 SOL  | -30%          | (20,0.25),(40,0.35),(80,1.00) | 10 |
+| Profile | BUY_AMOUNT | STOP_LOSS_PCT | TP_TIERS | MAX_HOLD_HOURS |
+|---------|-----------|---------------|----------|----------------|
+| Conservative | 0.02 SOL | -12% | (10,0.30),(20,0.40),(30,1.00) | 4 |
+| Default | 0.03 SOL | -20% | (15,0.30),(30,0.40),(50,1.00) | 6 |
+| Aggressive | 0.05 SOL | -30% | (20,0.25),(40,0.35),(80,1.00) | 10 |
 
-### Step 3: 应用配置并启动
+### Step 3: Apply Config and Launch
 
-1. 根据用户回答修改 `config.py`
-2. 检查前置条件：`onchainos --version`、`onchainos wallet status`
-3. 验证目标钱包地址有效：`onchainos portfolio token-balances --address <addr> --chains solana`
-4. 启动 bot：`python3 wallet_tracker.py`
-5. 展示 Dashboard 链接
+1. Update `config.py` based on user answers
+2. Check prerequisites: `onchainos --version`, `onchainos wallet status`
+3. Validate target wallet address: `onchainos portfolio token-balances --address <addr> --chains solana`
+4. Start bot: `python3 wallet_tracker.py`
+5. Show Dashboard link
 
 ---
 
-## config.py 参数
+## config.py Parameters
 
 ```python
-# ── 运行模式 ────────────────────────────────────────────────────────────
+# -- Running Mode ---------------------------------------------------------------
 MODE              = "paper"       # "paper" / "live"
-PAUSED            = True          # True=暂停（不开新仓），False=正常交易
+PAUSED            = True          # True=paused (no new positions), False=trading
 
-# ── 目标钱包 ────────────────────────────────────────────────────────────
-TARGET_WALLETS    = []            # 要跟踪的 Solana 钱包地址列表
+# -- Target Wallets -------------------------------------------------------------
+TARGET_WALLETS    = []            # Solana wallet addresses to track
 
-# ── 跟单模式 ────────────────────────────────────────────────────────────
+# -- Follow Mode ----------------------------------------------------------------
 FOLLOW_MODE       = "mc_target"   # "mc_target" / "instant"
-MC_TARGET_USD     = 500_000       # MC_TARGET 模式下的目标市值 ($)
-MC_MAX_USD        = 50_000_000    # 市值上限 -- 超过此值不跟买 ($)
+MC_TARGET_USD     = 500_000       # MC_TARGET: token market cap threshold ($)
+MC_MAX_USD        = 50_000_000    # Market cap ceiling -- skip tokens above this
 
-# ── 卖出跟踪 ────────────────────────────────────────────────────────────
-MIRROR_SELL       = True          # 目标钱包卖出时是否同步卖出
-MIRROR_SELL_PCT   = 1.00          # 跟卖比例 (1.00=全卖, 0.50=卖一半)
+# -- Mirror Selling -------------------------------------------------------------
+MIRROR_SELL       = True          # Mirror target wallet's sells?
+MIRROR_SELL_PCT   = 1.00          # Mirror sell ratio (1.00=sell all, 0.50=sell half)
 
-# ── 仓位 ────────────────────────────────────────────────────────────────
-BUY_AMOUNT        = 0.03          # 单笔买入 (SOL)
-MAX_POSITIONS     = 5             # 最多同时持仓数
-TOTAL_BUDGET      = 0.50          # SOL 总预算
-SLIPPAGE_BUY      = 5             # 买入滑点 (%)
-SLIPPAGE_SELL     = 15            # 卖出滑点 (%)
-GAS_RESERVE       = 0.01          # 保留 gas (SOL)
-MIN_WALLET_BAL    = 0.05          # 最低钱包余额才开仓 (SOL)
+# -- Position Sizing ------------------------------------------------------------
+BUY_AMOUNT        = 0.03          # SOL per trade
+MAX_POSITIONS     = 5             # Max simultaneous positions
+TOTAL_BUDGET      = 0.50          # Total SOL budget
+SLIPPAGE_BUY      = 5             # Buy slippage (%)
+SLIPPAGE_SELL     = 15            # Sell slippage (%)
+GAS_RESERVE       = 0.01          # Reserved for gas (SOL)
+MIN_WALLET_BAL    = 0.05          # Min wallet balance to open position (SOL)
 
-# ── 安全过滤（跟单仍需安全检查，不能盲跟）──────────────────────────────
-MIN_LIQUIDITY     = 10_000        # 最小流动性 ($)
-MIN_HOLDERS       = 30            # 最少持有者
-MAX_TOP10_HOLD    = 60            # Top10 持仓上限 (%)
-MAX_DEV_HOLD      = 30            # Dev 持仓上限 (%)
-MAX_BUNDLE_HOLD   = 20            # Bundler 持仓上限 (%)
-MAX_DEV_RUG_COUNT = 3             # Dev rug 次数上限
-BLOCK_HONEYPOT    = True          # 拦截蜜罐
-RISK_CHECK_GATE   = 3             # risk_check severity >= 此值则拒绝 (G3/G4 block)
+# -- Safety Filters (copy-trade still requires safety checks) -------------------
+MIN_LIQUIDITY     = 10_000        # Min liquidity ($)
+MIN_HOLDERS       = 30            # Min holder count
+MAX_TOP10_HOLD    = 60            # Top10 holding cap (%)
+MAX_DEV_HOLD      = 30            # Dev holding cap (%)
+MAX_BUNDLE_HOLD   = 20            # Bundler holding cap (%)
+MAX_DEV_RUG_COUNT = 3             # Dev rug count cap
+BLOCK_HONEYPOT    = True          # Block honeypots
+RISK_CHECK_GATE   = 3             # Block if risk grade >= this (G3/G4)
 
-# ── 止盈（梯度）────────────────────────────────────────────────────────
+# -- Take Profit (tiered) ------------------------------------------------------
 TP_TIERS = [
-    (15, 0.30),   # +15% 卖 30%
-    (30, 0.40),   # +30% 卖 40%
-    (50, 1.00),   # +50% 卖剩余全部
+    (15, 0.30),   # +15% sell 30%
+    (30, 0.40),   # +30% sell 40%
+    (50, 1.00),   # +50% sell remaining
 ]
 
-# ── 止损 ────────────────────────────────────────────────────────────────
-STOP_LOSS_PCT     = -20           # 硬止损 (%)
-TRAILING_ACTIVATE = 10            # 追踪止损: 盈利超过 N% 激活
-TRAILING_DROP     = 15            # 追踪止损: 从峰值回撤 N% 触发
-MAX_HOLD_HOURS    = 6             # 时间止损: 最大持仓小时数
+# -- Stop Loss ------------------------------------------------------------------
+STOP_LOSS_PCT     = -20           # Hard stop (%)
+TRAILING_ACTIVATE = 10            # Trailing stop: activate at N% profit
+TRAILING_DROP     = 15            # Trailing stop: sell on N% drop from peak
+MAX_HOLD_HOURS    = 6             # Time stop: max holding hours
 
-# ── Session 风控 ────────────────────────────────────────────────────────
-MAX_CONSEC_LOSS   = 3             # 连续亏损 N 次 → 暂停
-PAUSE_CONSEC_SEC  = 600           # 暂停时长 (秒)
-SESSION_STOP_SOL  = 0.10          # 累计亏损 → 停止交易
+# -- Session Risk Controls ------------------------------------------------------
+MAX_CONSEC_LOSS   = 3             # N consecutive losses > pause
+PAUSE_CONSEC_SEC  = 600           # Pause duration (seconds)
+SESSION_STOP_SOL  = 0.10          # Cumulative loss > stop trading
 
-# ── 轮询 ────────────────────────────────────────────────────────────────
-POLL_INTERVAL     = 30            # 钱包监控轮询周期 (秒) -- 别太频繁, 避免限流
-MONITOR_INTERVAL  = 15            # 持仓 + MC 检查周期 (秒)
-HEALTH_CHECK_SEC  = 300           # 钱包审计周期 (秒)
+# -- Polling --------------------------------------------------------------------
+POLL_INTERVAL     = 30            # Wallet poll interval (sec) -- min 15s
+MONITOR_INTERVAL  = 15            # Position + MC check interval (sec)
+HEALTH_CHECK_SEC  = 300           # Full wallet audit interval (sec)
 
-# ── Dashboard ──────────────────────────────────────────────────────────
+# -- Dashboard ------------------------------------------------------------------
 DASHBOARD_PORT    = 3248
 ```
 
 ---
 
-## 策略架构
+## Architecture
 
 ```
-wallet_tracker.py（单文件 Bot）
-├── onchainos CLI（数据 + 执行 + 安全 -- 无 API Key）
-│
-├── wallet_poll_loop()        ← 后台线程, 每 POLL_INTERVAL 秒
-│   ├── get_wallet_holdings()      获取目标钱包当前持仓
-│   │   └── onchainos portfolio token-balances
-│   ├── diff_snapshot()            对比上次快照, 检测变化
-│   │   ├── NEW tokens → _on_wallet_buy()
-│   │   └── REMOVED tokens → _on_wallet_sell()
-│   │
-│   ├── _on_wallet_buy(token)      目标钱包买入了新代币
-│   │   ├── safety_check()         安全过滤 (MC/Liq/Holders/Dev/Bundler)
-│   │   ├── risk_check.pre_trade_checks()   风控模块检查
-│   │   ├── if INSTANT → _execute_buy()
-│   │   └── if MC_TARGET → add to watch_list
-│   │
-│   └── _on_wallet_sell(token)     目标钱包卖出了代币
-│       └── if MIRROR_SELL and we hold → _execute_sell()
-│
-├── monitor_loop()            ← 后台线程, 每 MONITOR_INTERVAL 秒
-│   ├── check_mc_targets()         检查观察列表中代币的 MC
-│   │   └── onchainos token price-info
-│   │   └── MC >= MC_TARGET_USD → _execute_buy()
-│   │
-│   ├── check_positions()          持仓退出决策
-│   │   ├── STOP_LOSS: PnL <= STOP_LOSS_PCT
-│   │   ├── TRAILING: peak PnL >= TRAILING_ACTIVATE, drop >= TRAILING_DROP
-│   │   ├── TIME_STOP: held >= MAX_HOLD_HOURS
-│   │   └── TAKE_PROFIT: 梯度止盈
-│   │
-│   └── risk_check.post_trade_flags()  后台风控监控
-│       └── EXIT_NOW → 立即卖出
-│
-├── _execute_buy(token)       买入执行
-│   ├── onchainos swap quote        报价 + 蜜罐检测
-│   ├── onchainos swap swap         构建未签名交易
-│   ├── onchainos wallet contract-call  TEE 签名 + 广播
-│   └── onchainos wallet history    确认交易状态
-│
-├── _execute_sell(token, pct) 卖出执行
-│   ├── onchainos swap swap         构建卖出交易
-│   ├── onchainos wallet contract-call  TEE 签名 + 广播
-│   └── onchainos wallet history    确认交易状态
-│
-├── Dashboard (port 3248)     Web UI
-│   ├── 目标钱包持仓一览
-│   ├── 观察列表 (MC_TARGET 模式)
-│   ├── 当前持仓 + PnL
-│   └── 交易记录
-│
-└── 持久化文件（JSON, 原子写入）
-    ├── positions.json
-    ├── trades.json
-    ├── tracked_tokens.json
-    └── wallet_snapshots.json
+wallet_tracker.py (single-file bot)
+-- onchainos CLI (data + execution + security -- no API keys)
+|
+-- wallet_poll_loop()        <-- Background thread, every POLL_INTERVAL sec
+|   -- get_wallet_holdings()      Get target wallet current holdings
+|   |   +-- onchainos portfolio token-balances
+|   -- diff_snapshot()            Compare with last snapshot, detect changes
+|   |   -- NEW tokens > _on_wallet_buy()
+|   |   +-- REMOVED tokens > _on_wallet_sell()
+|   |
+|   -- _on_wallet_buy(token)      Target wallet bought a new token
+|   |   -- safety_check()         Safety filter (MC/Liq/Holders/Dev/Bundler)
+|   |   -- risk_check.pre_trade_checks()   Risk module assessment
+|   |   -- if INSTANT > _execute_buy()
+|   |   +-- if MC_TARGET > add to watch_list
+|   |
+|   +-- _on_wallet_sell(token)    Target wallet sold a token
+|       +-- if MIRROR_SELL and we hold > _execute_sell()
+|
+-- monitor_loop()            <-- Background thread, every MONITOR_INTERVAL sec
+|   -- check_mc_targets()         Check watched tokens' MC
+|   |   +-- onchainos token price-info
+|   |   +-- MC >= MC_TARGET_USD > _execute_buy()
+|   |
+|   -- check_positions()          Position exit decisions
+|   |   -- STOP_LOSS: PnL <= STOP_LOSS_PCT
+|   |   -- TRAILING: peak PnL >= TRAILING_ACTIVATE, drop >= TRAILING_DROP
+|   |   -- TIME_STOP: held >= MAX_HOLD_HOURS
+|   |   +-- TAKE_PROFIT: tiered exits
+|   |
+|   +-- risk_check.post_trade_flags()  Background risk monitoring
+|       +-- EXIT_NOW > immediate sell
+|
+-- _execute_buy(token)       Buy execution
+|   -- onchainos swap quote        Quote + honeypot detection
+|   -- onchainos swap swap         Build unsigned transaction
+|   -- onchainos wallet contract-call  TEE sign + broadcast
+|   +-- onchainos wallet history    Confirm transaction status
+|
+-- _execute_sell(token, pct) Sell execution
+|   -- onchainos swap swap         Build sell transaction
+|   -- onchainos wallet contract-call  TEE sign + broadcast
+|   +-- onchainos wallet history    Confirm transaction status
+|
+-- Dashboard (port 3248)     Web UI
+|   -- Target wallet holdings overview
+|   -- Watch list (MC_TARGET mode)
+|   -- Current positions + PnL
+|   +-- Trade history
+|
++-- Persistence (JSON, atomic writes)
+    -- positions.json
+    -- trades.json
+    -- tracked_tokens.json
+    +-- wallet_snapshots.json
 ```
 
 ---
 
-## onchainos CLI 命令清单
+## onchainos CLI Commands
 
-| # | 命令 | 用途 | 频率 |
-|---|------|------|------|
-| 1 | `onchainos portfolio token-balances --address <wallet> --chains solana` | 获取目标钱包全部代币持仓 | 每 POLL_INTERVAL |
-| 2 | `onchainos token price-info --chain solana --address <token>` | 获取代币 MC / 价格 / 流动性 | 每 MONITOR_INTERVAL |
-| 3 | `onchainos token advanced-info --chain solana --address <token>` | Dev/Bundler/蜜罐/安全数据 | 每个新代币 1 次 |
-| 4 | `onchainos market prices --tokens 501:<addr1>,501:<addr2>,...` | 批量价格查询（持仓监控） | 每 MONITOR_INTERVAL |
-| 5 | `onchainos swap quote --from 1111...1 --to <token> --amount <lamports> --chain solana` | 报价 + 蜜罐检测 | 每次买入前 |
-| 6 | `onchainos swap swap --from 1111...1 --to <token> --amount <lamports> --chain solana --wallet <addr> --slippage <pct>` | 构建买入交易 | 每次买入 |
-| 7 | `onchainos swap swap --from <token> --to 1111...1 --amount <amount> --chain solana --wallet <addr> --slippage <pct>` | 构建卖出交易 | 每次卖出 |
-| 8 | `onchainos wallet contract-call --chain 501 --to <router> --unsigned-tx <callData>` | TEE 签名 + 广播 | 每次买卖 |
-| 9 | `onchainos wallet history --tx-hash <hash> --chain-index 501` | 交易确认 | 买卖后轮询 |
-| 10 | `onchainos wallet addresses --chain 501` | 获取自己的 Solana 地址 | 启动时 1 次 |
-| 11 | `onchainos wallet balance --chain 501` | SOL 余额 | 每次买入前 |
+| # | Command | Purpose | Frequency |
+|---|---------|---------|-----------|
+| 1 | `onchainos portfolio token-balances --address <wallet> --chains solana` | Get target wallet token holdings | Every POLL_INTERVAL |
+| 2 | `onchainos token price-info --chain solana --address <token>` | Get token MC / price / liquidity | Every MONITOR_INTERVAL |
+| 3 | `onchainos token advanced-info --chain solana --address <token>` | Dev/Bundler/honeypot/safety data | Once per new token |
+| 4 | `onchainos market prices --tokens 501:<addr1>,501:<addr2>,...` | Batch price query (position monitoring) | Every MONITOR_INTERVAL |
+| 5 | `onchainos swap quote --from 1111...1 --to <token> --amount <lamports> --chain solana` | Quote + honeypot detection | Before each buy |
+| 6 | `onchainos swap swap --from 1111...1 --to <token> --amount <lamports> --chain solana --wallet <addr> --slippage <pct>` | Build buy transaction | Each buy |
+| 7 | `onchainos swap swap --from <token> --to 1111...1 --amount <amount> --chain solana --wallet <addr> --slippage <pct>` | Build sell transaction | Each sell |
+| 8 | `onchainos wallet contract-call --chain 501 --to <router> --unsigned-tx <callData>` | TEE sign + broadcast | Each buy/sell |
+| 9 | `onchainos wallet history --tx-hash <hash> --chain-index 501` | Confirm transaction | After buy/sell |
+| 10 | `onchainos wallet addresses --chain 501` | Get own Solana address | Once at startup |
+| 11 | `onchainos wallet balance --chain 501` | SOL balance | Before each buy |
 
 ---
 
-## 钱包变化检测逻辑
+## Wallet Change Detection
 
 ```
-每次 poll:
+Each poll:
   current_holdings = get_wallet_holdings(target_wallet)
   prev_holdings    = load_snapshot()
 
-  # 检测新买入
+  # Detect new buys
   for token in current_holdings:
       if token NOT in prev_holdings:
-          → _on_wallet_buy(token)   # 新代币, 目标钱包刚买的
+          > _on_wallet_buy(token)   # New token, target wallet just bought
 
-  # 检测卖出
+  # Detect sells
   for token in prev_holdings:
       if token NOT in current_holdings:
-          → _on_wallet_sell(token)  # 代币消失了, 目标钱包卖了
+          > _on_wallet_sell(token)  # Token gone, target wallet sold
       elif current_holdings[token].amount < prev_holdings[token].amount:
-          → _on_wallet_reduce(token)  # 部分卖出
+          > _on_wallet_reduce(token)  # Partial sell
 
   save_snapshot(current_holdings)
 ```
 
-**重要:** `token-balances` 返回的是当前持仓，不是交易记录。所以我们通过快照对比来推断买卖行为。这意味着如果目标钱包在两次 poll 之间买入又卖出了同一个代币，我们会漏掉这笔交易。POLL_INTERVAL 不能太长。
+**Important:** `token-balances` returns current holdings, not transaction history. We infer buy/sell behavior by comparing snapshots. If the target wallet buys and sells the same token between two polls, we miss that trade. Keep POLL_INTERVAL reasonable.
 
 ---
 
-## 安全检查（跟单不等于盲跟）
+## Safety Checks (Copy-trade != Blind Follow)
 
-即使是跟踪信任的钱包，每个新代币仍然经过安全检查：
+Even when tracking trusted wallets, every new token goes through safety checks:
 
-### 基础过滤
+### Basic Filters
 
-| 检查项 | 门槛 | 说明 |
-|--------|------|------|
-| 流动性 | >= $10,000 | 太低无法退出 |
-| 持有者 | >= 30 | 太少可能是假币 |
-| Top10 集中度 | <= 60% | 持仓太集中容易被砸 |
-| Dev 持仓 | <= 30% | Dev 持仓太多可能 rug |
-| Bundler 持仓 | <= 20% | Bundler 多说明不健康 |
-| Dev Rug 次数 | <= 3 | Dev 有 rug 历史 |
-| 蜜罐 | 必须非蜜罐 | 买了卖不出去 |
+| Check | Threshold | Reason |
+|-------|-----------|--------|
+| Liquidity | >= $10,000 | Too low to exit |
+| Holders | >= 30 | Too few may be fake |
+| Top10 concentration | <= 60% | Concentrated holdings = dump risk |
+| Dev holding | <= 30% | Dev holds too much = rug risk |
+| Bundler holding | <= 20% | High bundler % = unhealthy |
+| Dev rug count | <= 3 | Dev has rug history |
+| Honeypot | Must not be honeypot | Can't sell after buying |
 
-### risk_check.py 预检
+### risk_check.py Pre-Trade Assessment
 
-| Grade | 处理 |
-|-------|------|
-| G0 (pass) | 正常买入 |
-| G2 (caution) | 买入但记录警告, 收紧止损 |
-| G3 (warning) | 拒绝买入 |
-| G4 (block) | 拒绝买入 |
-
----
-
-## Iron Rules（不可违反）
-
-1. **NEVER** 盲跟 -- 每个代币必须过安全检查, 不管目标钱包是谁。
-2. **NEVER** 单次 balance=0 就认为钱包卖了。Solana RPC 有延迟, 必须连续 3 次确认。
-3. **NEVER** poll 频率低于 15 秒。onchainos API 有限流, 太频繁会被 ban。
-4. **写 positions.json 前必须持有 state lock。**
-5. `contract-call` 返回 TIMEOUT 时, 总是创建 unconfirmed 仓位, 等后续确认。
-6. 目标钱包地址变更需要重启 bot, 不支持热更新。
-7. GAS_RESERVE 永不花在交易上。
+| Grade | Action |
+|-------|--------|
+| G0 (pass) | Normal buy |
+| G2 (caution) | Buy but log warning, tighten stop loss |
+| G3 (warning) | Reject buy |
+| G4 (block) | Reject buy |
 
 ---
 
-## 故障排除
+## Iron Rules (Never Violate)
 
-| 问题 | 解决 |
-|------|------|
-| "目标钱包无持仓" | 确认地址正确, 检查 `onchainos portfolio token-balances --address <addr> --chains solana` |
-| 漏掉了目标钱包的一笔交易 | 钱包在两次 poll 之间买卖了同一代币。缩短 POLL_INTERVAL（但别低于 15s） |
-| 买入失败 | 检查 SOL 余额 >= MIN_WALLET_BAL, 检查代币流动性 |
-| Dashboard 打不开 | 检查端口 3248: `lsof -i:3248` |
-| 登录过期 | `onchainos wallet login <email>` |
-| API 限流 | POLL_INTERVAL 太短, 增加到 30-60 秒 |
+1. **NEVER** blind follow -- every token must pass safety checks, regardless of target wallet trust.
+2. **NEVER** assume wallet sold on a single balance=0 read. Solana RPC has delays; must confirm 3 consecutive times.
+3. **NEVER** poll faster than 15 seconds. onchainos API rate-limits aggressively; too frequent = ban.
+4. **MUST** hold state lock before writing positions.json.
+5. `contract-call` returns TIMEOUT: always create unconfirmed position, wait for later confirmation.
+6. Target wallet address changes require bot restart. No hot config reload.
+7. GAS_RESERVE is never spent on trades.
 
 ---
 
-## 参数调整
+## Troubleshooting
 
-**所有可调参数都在 `config.py` 中**, 无需修改 `wallet_tracker.py`。
+| Problem | Solution |
+|---------|----------|
+| "Target wallet has no holdings" | Verify address is correct, check `onchainos portfolio token-balances --address <addr> --chains solana` |
+| Missed a target wallet trade | Wallet bought and sold same token between polls. Shorten POLL_INTERVAL (but min 15s) |
+| Buy failed | Check SOL balance >= MIN_WALLET_BAL, check token liquidity |
+| Dashboard won't open | Check port 3248: `lsof -i:3248` |
+| Login expired | `onchainos wallet login <email>` |
+| API rate limited | POLL_INTERVAL too short, increase to 30-60 seconds |
 
-| 需求 | 修改 |
-|------|------|
-| 添加/更换目标钱包 | `TARGET_WALLETS = ["地址"]` (需重启) |
-| 切换跟单模式 | `FOLLOW_MODE = "instant"/"mc_target"` |
-| 调整目标市值 | `MC_TARGET_USD = 500_000` |
-| 关闭跟卖 | `MIRROR_SELL = False` |
-| 调整跟卖比例 | `MIRROR_SELL_PCT = 0.50` (卖一半) |
-| 调整仓位大小 | `BUY_AMOUNT = 0.03` |
-| 调整止盈 | `TP_TIERS = [(15,0.30),(30,0.40),(50,1.00)]` |
-| 调整止损 | `STOP_LOSS_PCT = -20` |
-| 调整轮询速度 | `POLL_INTERVAL = 30` (秒, 别低于 15) |
-| 模拟交易 | `MODE = "paper"` |
+---
+
+## Parameter Tuning
+
+**All tunable parameters are in `config.py`** -- no need to modify `wallet_tracker.py`.
+
+| Goal | Change |
+|------|--------|
+| Add/change target wallets | `TARGET_WALLETS = ["addr"]` (restart required) |
+| Switch follow mode | `FOLLOW_MODE = "instant"/"mc_target"` |
+| Adjust MC target | `MC_TARGET_USD = 500_000` |
+| Disable mirror sell | `MIRROR_SELL = False` |
+| Adjust mirror sell ratio | `MIRROR_SELL_PCT = 0.50` (sell half) |
+| Adjust position size | `BUY_AMOUNT = 0.03` |
+| Adjust take profit | `TP_TIERS = [(15,0.30),(30,0.40),(50,1.00)]` |
+| Adjust stop loss | `STOP_LOSS_PCT = -20` |
+| Adjust poll speed | `POLL_INTERVAL = 30` (sec, min 15) |
+| Paper trading | `MODE = "paper"` |
