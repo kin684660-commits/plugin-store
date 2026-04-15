@@ -10,6 +10,7 @@ pub async fn run(
     amount_str: &str,   // human-readable amount (e.g. "0.5" for 0.5 WETH)
     from: Option<String>,
     dry_run: bool,
+    confirm: bool,
 ) -> Result<()> {
     let cfg = get_market_config(chain_id, market)?;
     let asset_decimals = rpc::get_erc20_decimals(asset, cfg.rpc_url).await.unwrap_or(18);
@@ -42,6 +43,28 @@ pub async fn run(
     let withdraw_calldata = format!("0xf3fef3a3{}{}", asset_padded, amount_hex);
 
     let amount_human = format!("{:.decimals$}", amount as f64 / 10f64.powi(asset_decimals as i32), decimals = asset_decimals as usize);
+
+    // Confirm gate: show preview and exit if --confirm not given (and not dry-run)
+    if !dry_run && !confirm {
+        let result = serde_json::json!({
+            "ok": true,
+            "preview": true,
+            "operation": "withdraw",
+            "chain_id": chain_id,
+            "market": market,
+            "asset": asset,
+            "amount": amount_human,
+            "amount_raw": amount.to_string(),
+            "comet": cfg.comet_proxy,
+            "pending_transactions": 1,
+            "transactions": [
+                {"step": 1, "action": "Comet.withdraw", "comet": cfg.comet_proxy, "asset": asset, "amount": amount_human.clone(), "amount_raw": amount.to_string(), "calldata": withdraw_calldata}
+            ],
+            "note": "Re-run with --confirm to execute this transaction on-chain."
+        });
+        println!("{}", serde_json::to_string_pretty(&result)?);
+        return Ok(());
+    }
 
     if dry_run {
         let result = serde_json::json!({
