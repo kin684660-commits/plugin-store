@@ -1,5 +1,40 @@
 use serde_json::Value;
 
+/// Public RPC endpoints for supported chains — used by wait_for_tx.
+pub fn default_rpc_url(chain_id: u64) -> &'static str {
+    match chain_id {
+        1     => "https://ethereum.publicnode.com",
+        42161 => "https://arbitrum-one-rpc.publicnode.com",
+        56    => "https://bsc.publicnode.com",
+        8453  => "https://base-rpc.publicnode.com",
+        _     => "https://ethereum.publicnode.com",
+    }
+}
+
+/// Poll eth_getTransactionReceipt until the tx confirms or timeout (20 × 2s = 40s).
+/// Called after every ERC-20 approve so the on-chain allowance is visible before
+/// the main Pendle router tx fires.  Silently returns on timeout — the router tx
+/// will either succeed (allowance landed) or fail with a clear on-chain revert.
+pub async fn wait_for_tx(tx_hash: &str, rpc_url: &str) {
+    let client = reqwest::Client::new();
+    for _ in 0..20u32 {
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        let body = serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "eth_getTransactionReceipt",
+            "params": [tx_hash],
+            "id": 1
+        });
+        if let Ok(resp) = client.post(rpc_url).json(&body).send().await {
+            if let Ok(json) = resp.json::<Value>().await {
+                if json.get("result").map(|r| !r.is_null()).unwrap_or(false) {
+                    return;
+                }
+            }
+        }
+    }
+}
+
 /// Validate that an address looks like a well-formed EVM address (0x + 40 hex chars).
 pub fn validate_evm_address(addr: &str) -> anyhow::Result<()> {
     if !addr.starts_with("0x") || addr.len() != 42 {

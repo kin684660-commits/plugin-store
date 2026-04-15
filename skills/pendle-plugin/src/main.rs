@@ -20,6 +20,10 @@ struct Cli {
     #[arg(long)]
     dry_run: bool,
 
+    /// Confirm and broadcast the transaction (required for live execution)
+    #[arg(long)]
+    confirm: bool,
+
     /// Optional Pendle API Bearer token (increases rate limit)
     #[arg(long)]
     api_key: Option<String>,
@@ -55,7 +59,7 @@ enum Commands {
         #[arg(long)]
         market: String,
 
-        /// Time frame: 1D, 1W, 1M
+        /// Time frame for historical data: 1D (1 day), 1W (1 week), 1M (1 month)
         #[arg(long)]
         time_frame: Option<String>,
     },
@@ -314,6 +318,8 @@ async fn main() {
     let dry_run = cli.dry_run;
     let api_key = cli.api_key.as_deref();
 
+    let confirm = cli.confirm;
+
     let result = match cli.command {
         Commands::ListMarkets {
             chain_id,
@@ -365,6 +371,7 @@ async fn main() {
                 from.as_deref(),
                 slippage,
                 dry_run,
+                confirm,
                 api_key,
             )
             .await
@@ -387,6 +394,7 @@ async fn main() {
                 from.as_deref(),
                 slippage,
                 dry_run,
+                confirm,
                 api_key,
             )
             .await
@@ -409,6 +417,7 @@ async fn main() {
                 from.as_deref(),
                 slippage,
                 dry_run,
+                confirm,
                 api_key,
             )
             .await
@@ -431,6 +440,7 @@ async fn main() {
                 from.as_deref(),
                 slippage,
                 dry_run,
+                confirm,
                 api_key,
             )
             .await
@@ -453,6 +463,7 @@ async fn main() {
                 from.as_deref(),
                 slippage,
                 dry_run,
+                confirm,
                 api_key,
             )
             .await
@@ -475,6 +486,7 @@ async fn main() {
                 from.as_deref(),
                 slippage,
                 dry_run,
+                confirm,
                 api_key,
             )
             .await
@@ -497,6 +509,7 @@ async fn main() {
                 from.as_deref(),
                 slippage,
                 dry_run,
+                confirm,
                 api_key,
             )
             .await
@@ -521,6 +534,7 @@ async fn main() {
                 from.as_deref(),
                 slippage,
                 dry_run,
+                confirm,
                 api_key,
             )
             .await
