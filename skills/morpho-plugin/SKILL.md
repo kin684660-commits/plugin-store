@@ -1,7 +1,7 @@
 ---
 name: morpho-plugin
 description: "Supply, borrow and earn yield on Morpho — a permissionless lending protocol with $5B+ TVL. Trigger phrases: supply to morpho, deposit to morpho vault, borrow from morpho, repay morpho loan, morpho health factor, my morpho positions, morpho interest rates, claim morpho rewards, morpho markets, metamorpho vaults."
-version: "0.2.3"
+version: "0.2.5"
 author: "GeoGu360"
 tags:
   - lending
@@ -25,7 +25,7 @@ tags:
 # Check for skill updates (1-hour cache)
 UPDATE_CACHE="$HOME/.plugin-store/update-cache/morpho-plugin"
 CACHE_MAX=3600
-LOCAL_VER="0.2.3"
+LOCAL_VER="0.2.5"
 DO_CHECK=true
 
 if [ -f "$UPDATE_CACHE" ]; then
@@ -98,7 +98,7 @@ case "${OS}_${ARCH}" in
   mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
 esac
 mkdir -p ~/.local/bin
-curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/morpho-plugin@0.2.4/morpho-plugin-${TARGET}${EXT}" -o ~/.local/bin/.morpho-plugin-core${EXT}
+curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/morpho-plugin@0.2.5/morpho-plugin-${TARGET}${EXT}" -o ~/.local/bin/.morpho-plugin-core${EXT}
 chmod +x ~/.local/bin/.morpho-plugin-core${EXT}
 
 # Symlink CLI name to universal launcher
@@ -106,7 +106,7 @@ ln -sf "$LAUNCHER" ~/.local/bin/morpho-plugin
 
 # Register version
 mkdir -p "$HOME/.plugin-store/managed"
-echo "0.2.4" > "$HOME/.plugin-store/managed/morpho-plugin"
+echo "0.2.5" > "$HOME/.plugin-store/managed/morpho-plugin"
 ```
 
 ### Report install (auto-injected, runs once)
@@ -126,7 +126,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   # Report to Vercel stats
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"morpho-plugin","version":"0.2.4"}' >/dev/null 2>&1 || true
+    -d '{"name":"morpho-plugin","version":"0.2.5"}' >/dev/null 2>&1 || true
   # Report to OKX API (with HMAC-signed device token)
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \
@@ -746,6 +746,10 @@ morpho --chain 8453 vaults --asset WETH
 ---
 
 ## Changelog
+
+### v0.2.5
+- **Fix: resolved wallet address now always forwarded as `--from`** — All 7 write commands (`supply`, `withdraw`, `borrow`, `repay`, `supply-collateral`, `withdraw-collateral`, `claim-rewards`) now pass the resolved wallet address explicitly to onchainos. Previously, when `--from` was omitted, `resolve_wallet()` determined the address but the original `None` was forwarded, causing broadcast failures on Base (chain 8453) where onchainos cannot infer the signer without an explicit address.
+- **Fix: `wait_for_tx` timeout extended to 40s on all chains** — Base (~2s block time) was previously limited to 16s (8 attempts), causing false timeout errors when RPC lag delayed receipt confirmation. All chains now use 20 attempts × 2s = 40s.
 
 ### v0.2.2
 - **Safety: `--confirm` gate for all write operations** — Supply, withdraw, borrow, repay, supply-collateral, withdraw-collateral, and claim-rewards now require `--confirm` to broadcast. Calling without `--confirm` prints a rich `preview` JSON (operation, asset, amount, pending transactions) and exits safely. This prevents accidental on-chain execution.
