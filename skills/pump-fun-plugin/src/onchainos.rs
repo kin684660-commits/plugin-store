@@ -87,7 +87,7 @@ pub fn get_token_balance(mint: &str) -> anyhow::Result<Option<String>> {
     for detail in details {
         if let Some(assets) = detail["tokenAssets"].as_array() {
             for asset in assets {
-                let addr = asset["tokenContractAddress"].as_str().unwrap_or("");
+                let addr = asset["tokenAddress"].as_str().unwrap_or("");
                 if addr.eq_ignore_ascii_case(mint) {
                     if let Some(bal) = asset["balance"].as_str()
                         .or_else(|| asset["readableBalance"].as_str())
