@@ -262,8 +262,7 @@ normal for newly deployed tokens.
 
 ### Step 6 — Preview a token deployment (safe — no tx sent)
 
-All write commands require `--dry-run` for preview or `--confirm` to execute. Without either flag,
-the command returns a safe preview (`ok: true, preview: true`) showing the deployer address and parameters — no transaction is sent.
+For `deploy-token`, running without any flags returns a safe preview (`ok: true, preview: true`) showing the deployer address and parameters — no transaction is sent. For `claim-rewards`, `--dry-run` is required to preview; running without `--dry-run` or `--confirm` returns an error asking for confirmation.
 
 ```bash
 # Preview (safe — no tx sent):
@@ -350,6 +349,7 @@ clanker --chain 8453 list-tokens --limit 10 --sort desc
       }
     ],
     "total": 1200,
+    "page": 1,
     "has_more": true
   }
 }
@@ -482,7 +482,7 @@ clanker deploy-token --name "SkyDog" --symbol "SKYDOG" --from 0xYourWallet
 clanker --dry-run deploy-token --name "SkyDog" --symbol "SKYDOG" --from 0xYourWallet
 
 # Deploy (after user confirmation):
-clanker --confirm deploy-token --name "SkyDog" --symbol "SKYDOG" --from 0xYourWallet
+clanker deploy-token --name "SkyDog" --symbol "SKYDOG" --from 0xYourWallet --confirm
 ```
 
 > **Note:** `--from` is required for all three modes (preview, dry-run, and deploy). The plugin cannot resolve the active onchainos wallet automatically for token deployments. `--dry-run` must be a **global flag** before the subcommand.

@@ -153,8 +153,10 @@ pub async fn run(
         if wallet_preview.is_empty() {
             bail!("Cannot determine wallet address — pass --from or ensure onchainos is logged in");
         }
-        if !wallet_preview.starts_with("0x") || wallet_preview.len() != 42 {
-            bail!("Invalid wallet address: {}. Must be a 42-character hex address (0x...)", wallet_preview);
+        let hex_valid = wallet_preview.len() > 2
+            && wallet_preview[2..].chars().all(|c| c.is_ascii_hexdigit());
+        if !wallet_preview.starts_with("0x") || wallet_preview.len() != 42 || !hex_valid {
+            bail!("Invalid wallet address: {}. Must be a 42-character hex address (0x...).", wallet_preview);
         }
         let preview = serde_json::json!({
             "ok": true,
