@@ -131,6 +131,13 @@ pub async fn run(
     dry_run: bool,
     confirm: bool,
 ) -> Result<()> {
+    if name.trim().is_empty() {
+        bail!("--name cannot be empty");
+    }
+    if symbol.trim().is_empty() {
+        bail!("--symbol cannot be empty");
+    }
+
     // Preview gate: show intent without broadcasting when neither --dry-run nor --confirm
     if !dry_run && !confirm {
         let wallet_preview = from
@@ -138,6 +145,9 @@ pub async fn run(
             .unwrap_or_else(|| onchainos::resolve_wallet(chain_id).unwrap_or_default());
         if wallet_preview.is_empty() {
             bail!("Cannot determine wallet address — pass --from or ensure onchainos is logged in");
+        }
+        if !wallet_preview.starts_with("0x") || wallet_preview.len() != 42 {
+            bail!("Invalid wallet address: {}. Must be a 42-character hex address (0x...)", wallet_preview);
         }
         let preview = serde_json::json!({
             "ok": true,

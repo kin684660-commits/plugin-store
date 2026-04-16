@@ -535,7 +535,7 @@ clanker --confirm deploy-token --name "SkyDog" --symbol "SKYDOG" --from 0xYourWa
 ```
 clanker [--chain 8453] [--dry-run] claim-rewards \
   --token-address <TOKEN_ADDRESS> \
-  [--from <wallet-address>] \\
+  [--from <wallet-address>] \
   [--confirm]
 ```
 
@@ -612,6 +612,27 @@ clanker claim-rewards --token-address 0xTokenAddress --from 0xYourWallet --confi
 ---
 
 ## Changelog
+
+### v0.2.4 (2026-04-16)
+
+- **fix**: `deploy-token` without `--dry-run` or `--confirm` now returns a safe preview (`ok: true, preview: true`) showing the deployer address and parameters instead of exiting with an error.
+- **fix**: Empty `--name` or `--symbol` now returns a clear error before any network call.
+- **fix**: Invalid `--from` address (not 42-char hex) caught in preview path; returns error instead of `ok: true`.
+- **docs**: Updated Quickstart Step 6 to reflect preview behavior; fixed double-backslash typo in claim-rewards usage block; updated SKILL_SUMMARY.md to remove stale API key reference.
+
+### v0.2.3 (2026-04-14)
+
+- **docs**: Added Proactive Onboarding and Quickstart sections; updated Key Points to reflect on-chain deploy flow (no API key required).
+
+### v0.2.2 (2026-04-13)
+
+- **fix**: `deploy-token` preview gate added — without `--dry-run` or `--confirm`, command now shows intent and exits cleanly instead of proceeding silently.
+- **fix**: Version consistency across all 7 locations (Cargo.toml, Cargo.lock, plugin.yaml, plugin.json, SKILL.md frontmatter, download URL, telemetry).
+
+### v0.2.1 (2026-04-12)
+
+- **fix**: `deploy-token` dry-run uses `0xDRYRUN...` placeholder instead of zero address so output is clearly non-live.
+- **docs**: Version alignment — `.claude-plugin/plugin.json` corrected to `0.2.1`.
 
 ### v0.2.0 (2026-04-11)
 
