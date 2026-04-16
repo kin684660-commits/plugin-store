@@ -1,7 +1,7 @@
 use anyhow::Result;
 use serde_json::Value;
 
-use crate::api::{self, SdkTokenAmount};
+use crate::api;
 use crate::onchainos;
 
 pub async fn run(
@@ -42,42 +42,19 @@ pub async fn run(
         }
     }
 
-    // Both PT and YT as outputs; Hosted SDK routes to mintPyFromToken
-    let sdk_resp = api::sdk_convert(
+    // Use the v2 GET endpoint with comma-separated tokensOut — the v3 POST endpoint cannot
+    // classify mintPyFromToken when outputs contains both PT and YT addresses.
+    // Ref: pendle-finance/pendle-examples-public hosted-sdk-demo/src/mint-py.ts
+    let sdk_resp = api::sdk_convert_v2_get(
         chain_id,
         &wallet,
-        vec![SdkTokenAmount {
-            token: token_in.to_string(),
-            amount: amount_in.to_string(),
-        }],
-        vec![
-            SdkTokenAmount {
-                token: pt_address.to_string(),
-                amount: "0".to_string(),
-            },
-            SdkTokenAmount {
-                token: yt_address.to_string(),
-                amount: "0".to_string(),
-            },
-        ],
+        token_in,
+        amount_in,
+        &format!("{},{}", pt_address, yt_address),
         slippage,
         api_key,
     )
-    .await
-    .map_err(|e| {
-        let msg = e.to_string();
-        if msg.contains("400") || msg.contains("Unable to classify") || msg.contains("convert action") {
-            anyhow::anyhow!(
-                "{}. \
-                 Hint: The Pendle SDK may not support minting from this input token on this market. \
-                 Try using the SY token address as --token-in (find it with: pendle --chain {} get-market-info --market {}). \
-                 If the market is expired, minting is no longer possible.",
-                msg, chain_id, pt_address
-            )
-        } else {
-            e
-        }
-    })?;
+    .await?;
 
     let (calldata, router_to) = api::extract_sdk_calldata(&sdk_resp)?;
     let approvals = api::extract_required_approvals(&sdk_resp);

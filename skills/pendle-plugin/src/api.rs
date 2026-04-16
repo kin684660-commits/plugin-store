@@ -197,6 +197,53 @@ pub async fn get_asset_prices(
     Ok(body)
 }
 
+/// GET /v2/sdk/{chainId}/convert — Pendle Hosted SDK v2 endpoint.
+///
+/// Used for multi-token operations where the v3 POST endpoint cannot classify the action:
+///   - mintPyFromToken:  tokensIn = underlying, tokensOut = "pt_addr,yt_addr"
+///   - redeemPyToToken:  tokensIn = "pt_addr,yt_addr", amountsIn = "pt_amt,yt_amt", tokensOut = underlying
+///
+/// Per the official Pendle hosted-SDK examples (pendle-finance/pendle-examples-public),
+/// the v2 GET endpoint is the correct path for mint/redeem PY. The response schema is
+/// identical to v3 POST (routes[].tx.data / routes[].tx.to) so all existing extractors work.
+pub async fn sdk_convert_v2_get(
+    chain_id: u64,
+    receiver: &str,
+    tokens_in: &str,   // comma-separated for multi-input (e.g. "pt_addr,yt_addr")
+    amounts_in: &str,  // comma-separated for multi-input (e.g. "pt_wei,yt_wei")
+    tokens_out: &str,  // comma-separated for multi-output (e.g. "pt_addr,yt_addr")
+    slippage: f64,
+    api_key: Option<&str>,
+) -> anyhow::Result<Value> {
+    let client = build_client(api_key)?;
+    let url = format!(
+        "{}/v2/sdk/{}/convert?tokensIn={}&amountsIn={}&tokensOut={}&receiver={}&slippage={}&enableAggregator=true",
+        PENDLE_API_BASE, chain_id,
+        tokens_in, amounts_in, tokens_out, receiver, slippage
+    );
+
+    let resp = client
+        .get(&url)
+        .send()
+        .await
+        .context("Failed to call Pendle SDK v2 convert API")?;
+
+    let status = resp.status();
+    let body_text = resp.text().await.context("Failed to read SDK v2 convert response body")?;
+
+    if !status.is_success() {
+        anyhow::bail!(
+            "Pendle SDK v2 convert returned HTTP {}: {}",
+            status.as_u16(),
+            body_text.trim()
+        );
+    }
+
+    let response: Value = serde_json::from_str(&body_text)
+        .context("Failed to parse SDK v2 convert response")?;
+    Ok(response)
+}
+
 /// POST /v3/sdk/{chainId}/convert — generate transaction calldata via Pendle Hosted SDK
 pub async fn sdk_convert(
     chain_id: u64,

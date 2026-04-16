@@ -1,7 +1,7 @@
 use anyhow::Result;
 use serde_json::Value;
 
-use crate::api::{self, SdkTokenAmount};
+use crate::api;
 use crate::onchainos;
 
 pub async fn run(
@@ -53,24 +53,15 @@ pub async fn run(
         }
     }
 
-    // Both PT and YT as inputs; Hosted SDK routes to redeemPyToToken
-    let sdk_resp = api::sdk_convert(
+    // Use the v2 GET endpoint with comma-separated tokensIn — the v3 POST endpoint cannot
+    // classify redeemPyToToken when inputs contains both PT and YT addresses.
+    // Ref: pendle-finance/pendle-examples-public hosted-sdk-demo/src/redeem-py.ts
+    let sdk_resp = api::sdk_convert_v2_get(
         chain_id,
         &wallet,
-        vec![
-            SdkTokenAmount {
-                token: pt_address.to_string(),
-                amount: pt_amount.to_string(),
-            },
-            SdkTokenAmount {
-                token: yt_address.to_string(),
-                amount: yt_amount.to_string(),
-            },
-        ],
-        vec![SdkTokenAmount {
-            token: token_out.to_string(),
-            amount: "0".to_string(),
-        }],
+        &format!("{},{}", pt_address, yt_address),
+        &format!("{},{}", pt_amount, yt_amount),
+        token_out,
         slippage,
         api_key,
     )
