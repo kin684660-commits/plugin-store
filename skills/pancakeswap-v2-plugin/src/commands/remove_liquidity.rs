@@ -49,12 +49,12 @@ pub async fn run(args: RemoveLiquidityArgs) -> Result<serde_json::Value> {
     let token_a_addr = if native_a {
         cfg.weth.to_string()
     } else {
-        resolve_token_address(&args.token_a, args.chain_id)
+        resolve_token_address(&args.token_a, args.chain_id)?
     };
     let token_b_addr = if native_b {
         cfg.weth.to_string()
     } else {
-        resolve_token_address(&args.token_b, args.chain_id)
+        resolve_token_address(&args.token_b, args.chain_id)?
     };
 
     let decimals_a = rpc::erc20_decimals(&token_a_addr, rpc).await.unwrap_or(18);

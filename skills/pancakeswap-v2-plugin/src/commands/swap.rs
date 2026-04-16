@@ -33,12 +33,12 @@ pub async fn run(args: SwapArgs) -> Result<serde_json::Value> {
     let token_in_addr = if native_in {
         cfg.weth.to_string()
     } else {
-        resolve_token_address(&token_in_sym, args.chain_id)
+        resolve_token_address(&token_in_sym, args.chain_id)?
     };
     let token_out_addr = if native_out {
         cfg.weth.to_string()
     } else {
-        resolve_token_address(&token_out_sym, args.chain_id)
+        resolve_token_address(&token_out_sym, args.chain_id)?
     };
 
     if token_in_addr == token_out_addr {
@@ -223,6 +223,8 @@ pub async fn run(args: SwapArgs) -> Result<serde_json::Value> {
     results["data"] = json!({
         "tokenIn": token_in_addr,
         "tokenOut": token_out_addr,
+        "symbolIn": args.token_in,
+        "symbolOut": args.token_out,
         "amountIn": amount_in.to_string(),
         "amountOutMin": amount_out_min.to_string(),
         "amountOutExpected": amount_out_expected.to_string(),

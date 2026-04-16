@@ -113,8 +113,8 @@ pub async fn run(args: AddLiquidityArgs) -> Result<serde_json::Value> {
     ) + args.deadline_secs;
 
     // Resolve token decimals and parse human-readable amounts
-    let token_a_for_dec = if native_a { cfg.weth.to_string() } else { resolve_token_address(&args.token_a, args.chain_id) };
-    let token_b_for_dec = if native_b { cfg.weth.to_string() } else { resolve_token_address(&args.token_b, args.chain_id) };
+    let token_a_for_dec = if native_a { cfg.weth.to_string() } else { resolve_token_address(&args.token_a, args.chain_id)? };
+    let token_b_for_dec = if native_b { cfg.weth.to_string() } else { resolve_token_address(&args.token_b, args.chain_id)? };
     let decimals_a = rpc::erc20_decimals(&token_a_for_dec, rpc).await.unwrap_or(18);
     let decimals_b = rpc::erc20_decimals(&token_b_for_dec, rpc).await.unwrap_or(18);
     let amount_a = rpc::parse_human_amount(&args.amount_a, decimals_a)?;
@@ -135,7 +135,7 @@ pub async fn run(args: AddLiquidityArgs) -> Result<serde_json::Value> {
         } else {
             (&args.token_b, amount_b, amount_a)
         };
-        let token_addr = resolve_token_address(token_sym, args.chain_id);
+        let token_addr = resolve_token_address(token_sym, args.chain_id)?;
         let token_min = token_amount * (10000 - args.slippage_bps) as u128 / 10000;
         let eth_min = eth_amount * (10000 - args.slippage_bps) as u128 / 10000;
         token_a_addr_for_lp = token_addr.clone();
@@ -168,8 +168,8 @@ pub async fn run(args: AddLiquidityArgs) -> Result<serde_json::Value> {
         }));
     } else {
         // addLiquidity variant (token + token)
-        let token_a_addr = resolve_token_address(&args.token_a, args.chain_id);
-        let token_b_addr = resolve_token_address(&args.token_b, args.chain_id);
+        let token_a_addr = resolve_token_address(&args.token_a, args.chain_id)?;
+        let token_b_addr = resolve_token_address(&args.token_b, args.chain_id)?;
         token_a_addr_for_lp = token_a_addr.clone();
         token_b_addr_for_lp = token_b_addr.clone();
         let amount_a_min = amount_a * (10000 - args.slippage_bps) as u128 / 10000;

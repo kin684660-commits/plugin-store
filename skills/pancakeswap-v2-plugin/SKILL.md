@@ -304,6 +304,7 @@ These flags apply to the **entire binary** and must be placed **before** the sub
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--chain <id>` | `56` | Chain ID: 56 (BSC), 8453 (Base), 42161 (Arbitrum) |
+| `--confirm` | false | Broadcast write transactions on-chain; without this flag write commands show a preview only |
 | `--dry-run` | false | Simulate without broadcasting — no onchainos call made |
 | `--slippage-bps <n>` | `100` | Slippage tolerance in basis points (100 = 1%) |
 | `--deadline-secs <n>` | `300` | Transaction deadline in seconds from now |
@@ -424,11 +425,13 @@ pancakeswap-v2 --dry-run --chain 56 swap --token-in USDT --token-out CAKE --amou
     {"step": "swapExactTokensForTokens", "txHash": "0xdef...", "explorer": "https://bscscan.com/tx/0xdef..."}
   ],
   "data": {
+    "tokenIn": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    "tokenOut": "0x55d398326f99059fF775485246999027B3197955",
+    "symbolIn": "USDC",
+    "symbolOut": "USDT",
     "amountIn": "100000",
     "amountOutExpected": "99823",
     "amountOutMin": "98825",
-    "tokenIn": "USDC",
-    "tokenOut": "USDT",
     "path": ["0x8ac7...", "0x55d3..."],
     "wallet": "0xYourWallet",
     "chain": 56
