@@ -48,7 +48,12 @@ pub async fn execute(args: &SellArgs, dry_run: bool) -> Result<()> {
                 "<full balance>".to_string()
             } else {
                 onchainos::get_token_balance(&args.mint)?
-                    .ok_or_else(|| anyhow::anyhow!("No balance found for mint {}", args.mint))?
+                    .ok_or_else(|| anyhow::anyhow!(
+                        "No balance found for mint {} in your Solana wallet. \
+                         Ensure the token is held in the active wallet, or specify \
+                         the amount explicitly with --token-amount <amount>.",
+                        args.mint
+                    ))?
             }
         }
     };

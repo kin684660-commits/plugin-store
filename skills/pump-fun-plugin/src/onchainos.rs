@@ -87,12 +87,22 @@ pub fn get_token_balance(mint: &str) -> anyhow::Result<Option<String>> {
     for detail in details {
         if let Some(assets) = detail["tokenAssets"].as_array() {
             for asset in assets {
-                let addr = asset["tokenAddress"].as_str().unwrap_or("");
+                // onchainos returns "address" for the token mint on Solana (not "tokenAddress")
+                let addr = asset["address"].as_str()
+                    .or_else(|| asset["tokenAddress"].as_str())
+                    .or_else(|| asset["mint"].as_str())
+                    .unwrap_or("");
                 if addr.eq_ignore_ascii_case(mint) {
                     if let Some(bal) = asset["balance"].as_str()
                         .or_else(|| asset["readableBalance"].as_str())
+                        .or_else(|| asset["uiAmount"].as_str())
                     {
                         return Ok(Some(bal.to_string()));
+                    }
+                    if let Some(n) = asset["balance"].as_f64()
+                        .or_else(|| asset["uiAmount"].as_f64())
+                    {
+                        return Ok(Some(n.to_string()));
                     }
                 }
             }
