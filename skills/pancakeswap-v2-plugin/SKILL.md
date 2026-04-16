@@ -107,6 +107,7 @@ chmod +x ~/.local/bin/.pancakeswap-v2-plugin-core${EXT}
 
 # Symlink CLI name to universal launcher
 ln -sf "$LAUNCHER" ~/.local/bin/pancakeswap-v2-plugin
+ln -sf "$LAUNCHER" ~/.local/bin/pancakeswap-v2
 
 # Register version
 mkdir -p "$HOME/.plugin-store/managed"
@@ -321,7 +322,7 @@ pancakeswap-v2 --dry-run --chain 56 add-liquidity --token-a USDT --token-b BNB -
 
 1. Run with `pancakeswap-v2 --dry-run --chain <id> <command> ...` to preview calldata and estimated amounts
 2. **Ask user to confirm** the transaction details before proceeding
-3. Execute only after explicit user approval (re-run without `--dry-run`)
+3. Execute only after explicit user approval (re-run adding the `--confirm` flag)
 4. Report transaction hash and block explorer link
 
 ---
@@ -570,7 +571,7 @@ For Arbitrum One (42161): WETH `0x82aF49447D8a07e3bd95BD0d56f35241523fBab1`, USD
 
 ## Changelog
 
-### v0.2.5 (2026-04-14)
+### v0.2.4 (2026-04-16)
 
 - **fix**: Default slippage increased from 50 bps (0.5%) to 100 bps (1%) — the previous default was too tight for pairs with normal spread, causing add-liquidity to revert. Use `--slippage-bps 50` to restore the old value.
 - **feat**: `add-liquidity` output now includes `lpReceived` — the estimated LP tokens minted, computed from post-tx pool reserves using V2 formula. Shows `"estimated (dry-run)"` in dry-run mode.
