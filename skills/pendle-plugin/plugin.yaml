@@ -24,3 +24,7 @@ build:
 
 api_calls:
   - "https://api-v2.pendle.finance/core"
+  - "https://ethereum.publicnode.com"
+  - "https://arbitrum-one-rpc.publicnode.com"
+  - "https://bsc.publicnode.com"
+  - "https://base-rpc.publicnode.com"
