@@ -2,7 +2,7 @@ use clap::Args;
 use crate::api::{get_asset_meta, get_all_mids, get_clearinghouse_state};
 use crate::config::{info_url, exchange_url, normalize_coin, now_ms, CHAIN_ID, ARBITRUM_CHAIN_ID};
 use crate::onchainos::{onchainos_hl_sign, resolve_wallet};
-use crate::signing::{build_close_action, market_slippage_px, submit_exchange_request};
+use crate::signing::{build_close_action, round_px, submit_exchange_request};
 
 #[derive(Args)]
 pub struct CloseArgs {
@@ -13,6 +13,10 @@ pub struct CloseArgs {
     /// Close only this many base units instead of the entire position
     #[arg(long)]
     pub size: Option<String>,
+
+    /// Slippage tolerance for the market close order, in percent (default 5.0 = 5%)
+    #[arg(long, default_value = "5.0")]
+    pub slippage: f64,
 
     /// Dry run — show payload without signing or submitting
     #[arg(long)]
@@ -31,13 +35,31 @@ pub async fn run(args: CloseArgs) -> anyhow::Result<()> {
     let nonce = now_ms();
 
     // Look up asset index and sz_decimals for price rounding
-    let (asset_idx, sz_decimals) = get_asset_meta(info, &coin).await?;
+    let (asset_idx, sz_decimals) = match get_asset_meta(info, &coin).await {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "API_ERROR", "Check your connection and retry."));
+            return Ok(());
+        }
+    };
 
     // Resolve wallet
-    let wallet = resolve_wallet(CHAIN_ID)?;
+    let wallet = match resolve_wallet(CHAIN_ID) {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "WALLET_NOT_FOUND", "Run onchainos wallet addresses to verify login."));
+            return Ok(());
+        }
+    };
 
     // Fetch current position to determine direction and full size
-    let state = get_clearinghouse_state(info, &wallet).await?;
+    let state = match get_clearinghouse_state(info, &wallet).await {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "API_ERROR", "Check your connection and retry."));
+            return Ok(());
+        }
+    };
     let empty_vec = vec![];
     let positions = state["assetPositions"].as_array().unwrap_or(&empty_vec);
 
@@ -52,12 +74,25 @@ pub async fn run(args: CloseArgs) -> anyhow::Result<()> {
         }
     }
 
-    let szi = position_szi.ok_or_else(|| {
-        anyhow::anyhow!("No open {} position found. Use `hyperliquid positions` to check.", coin)
-    })?;
+    let szi = match position_szi {
+        Some(v) => v,
+        None => {
+            println!("{}", super::error_response(
+                &format!("No open {} position found.", coin),
+                "POSITION_NOT_FOUND",
+                "Run positions to see open positions."
+            ));
+            return Ok(());
+        }
+    };
 
     if szi == 0.0 {
-        anyhow::bail!("No open {} position (size is 0).", coin);
+        println!("{}", super::error_response(
+            &format!("No open {} position (size is 0).", coin),
+            "POSITION_NOT_FOUND",
+            "Run positions to see open positions."
+        ));
+        return Ok(());
     }
 
     let position_is_long = szi > 0.0;
@@ -67,18 +102,24 @@ pub async fn run(args: CloseArgs) -> anyhow::Result<()> {
     // Determine close size
     let close_size = match &args.size {
         Some(s) => {
-            let v: f64 = s.parse().map_err(|_| {
-                anyhow::anyhow!("Invalid size '{}' — must be a number", s)
-            })?;
+            let v: f64 = match s.parse() {
+                Ok(v) => v,
+                Err(_) => {
+                    println!("{}", super::error_response(&format!("Invalid size '{}' — must be a number", s), "INVALID_ARGUMENT", "Provide a numeric size value, e.g. --size 0.01"));
+                    return Ok(());
+                }
+            };
             if v <= 0.0 {
-                anyhow::bail!("Close size must be positive");
+                println!("{}", super::error_response("Close size must be positive", "INVALID_ARGUMENT", "Provide a positive close size value."));
+                return Ok(());
             }
             if v > position_size {
-                anyhow::bail!(
-                    "Close size {} exceeds position size {}",
-                    v,
-                    position_size
-                );
+                println!("{}", super::error_response(
+                    &format!("Close size {} exceeds position size {}", v, position_size),
+                    "INVALID_ARGUMENT",
+                    &format!("Maximum close size is {}.", position_size)
+                ));
+                return Ok(());
             }
             s.clone()
         }
@@ -86,7 +127,13 @@ pub async fn run(args: CloseArgs) -> anyhow::Result<()> {
     };
 
     // Fetch current price for display
-    let mids = get_all_mids(info).await?;
+    let mids = match get_all_mids(info).await {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "API_ERROR", "Check your connection and retry."));
+            return Ok(());
+        }
+    };
     let current_price = mids
         .get(&coin)
         .and_then(|v| v.as_str())
@@ -95,7 +142,8 @@ pub async fn run(args: CloseArgs) -> anyhow::Result<()> {
     let closing_side = if position_is_long { "sell" } else { "buy" };
     let close_is_buy = !position_is_long;
     let mid_f = current_price.parse::<f64>().unwrap_or(0.0);
-    let slippage_px_str = market_slippage_px(mid_f, close_is_buy, sz_decimals);
+    let slippage_multiplier = if close_is_buy { 1.0 + args.slippage / 100.0 } else { 1.0 - args.slippage / 100.0 };
+    let slippage_px_str = round_px(mid_f * slippage_multiplier, sz_decimals);
 
     let action = build_close_action(asset_idx, position_is_long, &close_size, &slippage_px_str);
 
@@ -110,6 +158,8 @@ pub async fn run(args: CloseArgs) -> anyhow::Result<()> {
                 "closingSide": closing_side,
                 "currentMidPrice": current_price,
                 "type": "market",
+                "slippagePct": args.slippage,
+                "worstFillPrice": slippage_px_str,
                 "reduceOnly": true,
                 "nonce": nonce
             },
@@ -128,8 +178,20 @@ pub async fn run(args: CloseArgs) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let signed = onchainos_hl_sign(&action, nonce, &wallet, ARBITRUM_CHAIN_ID, true, false)?;
-    let result = submit_exchange_request(exchange, signed).await?;
+    let signed = match onchainos_hl_sign(&action, nonce, &wallet, ARBITRUM_CHAIN_ID, true, false) {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "SIGNING_FAILED", "Retry the command. If the issue persists, check onchainos status."));
+            return Ok(());
+        }
+    };
+    let result = match submit_exchange_request(exchange, signed).await {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "TX_SUBMIT_FAILED", "Retry the command. If the issue persists, check onchainos status."));
+            return Ok(());
+        }
+    };
 
     println!(
         "{}",

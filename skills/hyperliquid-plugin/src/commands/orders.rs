@@ -19,10 +19,22 @@ pub async fn run(args: OrdersArgs) -> anyhow::Result<()> {
 
     let address = match args.address {
         Some(addr) => addr,
-        None => resolve_wallet(CHAIN_ID)?,
+        None => match resolve_wallet(CHAIN_ID) {
+            Ok(v) => v,
+            Err(e) => {
+                println!("{}", super::error_response(&format!("{:#}", e), "WALLET_NOT_FOUND", "Run onchainos wallet addresses to verify login."));
+                return Ok(());
+            }
+        },
     };
 
-    let orders = get_open_orders(url, &address).await?;
+    let orders = match get_open_orders(url, &address).await {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "API_ERROR", "Check your connection and retry."));
+            return Ok(());
+        }
+    };
 
     let empty_vec = vec![];
     let all_orders = orders.as_array().unwrap_or(&empty_vec);

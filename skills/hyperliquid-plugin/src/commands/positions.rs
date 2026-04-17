@@ -18,12 +18,24 @@ pub async fn run(args: PositionsArgs) -> anyhow::Result<()> {
 
     let address = match args.address {
         Some(addr) => addr,
-        None => resolve_wallet(CHAIN_ID)?,
+        None => match resolve_wallet(CHAIN_ID) {
+            Ok(v) => v,
+            Err(e) => {
+                println!("{}", super::error_response(&format!("{:#}", e), "WALLET_NOT_FOUND", "Run onchainos wallet addresses to verify login."));
+                return Ok(());
+            }
+        },
     };
 
     eprintln!("Fetching Hyperliquid positions for: {}", address);
 
-    let state = get_clearinghouse_state(url, &address).await?;
+    let state = match get_clearinghouse_state(url, &address).await {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "API_ERROR", "Check your connection and retry."));
+            return Ok(());
+        }
+    };
 
     // Parse margin summary
     let margin = &state["marginSummary"];
@@ -84,7 +96,13 @@ pub async fn run(args: PositionsArgs) -> anyhow::Result<()> {
     });
 
     if args.show_orders {
-        let orders = get_open_orders(url, &address).await?;
+        let orders = match get_open_orders(url, &address).await {
+            Ok(v) => v,
+            Err(e) => {
+                println!("{}", super::error_response(&format!("{:#}", e), "API_ERROR", "Check your connection and retry."));
+                return Ok(());
+            }
+        };
         out["openOrders"] = orders;
     }
 

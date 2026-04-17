@@ -12,7 +12,13 @@ pub struct PricesArgs {
 
 pub async fn run(args: PricesArgs) -> anyhow::Result<()> {
     let url = info_url();
-    let mids = get_all_mids(url).await?;
+    let mids = match get_all_mids(url).await {
+        Ok(v) => v,
+        Err(e) => {
+            println!("{}", super::error_response(&format!("{:#}", e), "API_ERROR", "Check your connection and retry."));
+            return Ok(());
+        }
+    };
 
     match args.coin {
         Some(coin) => {
@@ -29,18 +35,23 @@ pub async fn run(args: PricesArgs) -> anyhow::Result<()> {
                     );
                 }
                 None => {
-                    anyhow::bail!(
-                        "Coin '{}' not found. Check spelling or run `hyperliquid prices` without --coin to list all coins.",
-                        coin_upper
-                    );
+                    println!("{}", super::error_response(
+                        &format!("Coin '{}' not found. Check spelling or run `hyperliquid prices` without --coin to list all coins.", coin_upper),
+                        "INVALID_ARGUMENT",
+                        "Check the coin symbol or run `hyperliquid prices` without --coin to list all available coins."
+                    ));
                 }
             }
         }
         None => {
             // Return all prices sorted alphabetically
-            let obj = mids
-                .as_object()
-                .ok_or_else(|| anyhow::anyhow!("Unexpected allMids response format"))?;
+            let obj = match mids.as_object() {
+                Some(v) => v,
+                None => {
+                    println!("{}", super::error_response("Unexpected allMids response format", "API_ERROR", "Check your connection and retry."));
+                    return Ok(());
+                }
+            };
 
             let mut sorted: Vec<(&String, &serde_json::Value)> = obj.iter().collect();
             sorted.sort_by_key(|(k, _)| k.as_str());

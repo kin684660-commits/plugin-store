@@ -17,3 +17,15 @@ pub mod tpsl;
 pub mod transfer;
 pub mod withdraw;
 pub mod quickstart;
+
+/// Render a structured error JSON string for stdout output.
+/// All command failures must use this instead of anyhow::bail! or ?.
+pub fn error_response(msg: &str, code: &str, suggestion: &str) -> String {
+    serde_json::to_string_pretty(&serde_json::json!({
+        "ok": false,
+        "error": msg,
+        "error_code": code,
+        "suggestion": suggestion,
+    }))
+    .unwrap_or_else(|_| format!(r#"{{"ok":false,"error":{:?}}}"#, msg))
+}
