@@ -696,14 +696,15 @@
     },
     {
       "name": "pump-fun",
-      "version": "0.1.4",
+      "version": "0.1.9",
       "description": "Buy and sell tokens on pump.fun bonding curves on Solana mainnet",
       "author": {
         "name": "skylavis-sky"
       },
       "category": "utility",
       "tags": [
-        "solana"
+        "solana",
+        "trading"
       ],
       "type": "official",
       "components": {
@@ -719,7 +720,7 @@
           "base"
         ],
         "protocols": [],
-        "risk_level": "medium"
+        "risk_level": "high"
       }
     },
     {
