@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.2.7 — 2026-04-17
+
+### Changed
+
+- **Binary renamed back to `pendle-plugin`**: The v0.2.4 rename to `pendle` was inconsistent
+  with the plugin directory name and the rest of the plugin store. Reverted across all surfaces:
+  `Cargo.toml` `[[bin]]`, `plugin.yaml` `binary_name`, `plugin.json` name, clap app name, and
+  all SKILL.md command examples and install script paths. The install script now migrates users
+  from the old `pendle` binary automatically.
+
+### Documented
+
+- **mint-py `--token-in` accepts any ERC-20**: Live API testing confirmed that any ERC-20 token
+  (USDC, USDT, WETH, ARB, WBTC, DAI, etc.) works as `--token-in` via the aggregator routing.
+  The market's underlying token mints directly; all others go through a DEX aggregator swap first.
+  Only the native ETH sentinel address (`0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee`) is rejected
+  by the Pendle Hosted SDK API. SKILL.md updated to reflect the full supported range.
+
 ## v0.2.6 — 2026-04-17
 
 ### Fixed
