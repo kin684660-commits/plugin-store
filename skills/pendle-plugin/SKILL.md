@@ -561,9 +561,12 @@ pendle-plugin --chain <CHAIN_ID> [--dry-run] [--confirm] remove-liquidity \
 
 **Trigger phrases:** "mint PT and YT", "tokenize yield Pendle", "split yield Pendle", "create PT YT"
 
-> ⚠️ **Known limitations:**
-> - **Native ETH is not supported** as `--token-in`. Use WETH (`0x82aF49447D8a07e3bd95BD0d56f35241523fBab1` on Arbitrum, `0x4200000000000000000000000000000000000006` on Base) instead.
-> - Some markets return HTTP 403 from the Pendle SDK for multi-output minting. Try Arbitrum (chainId 42161) which has the highest coverage. If 403 persists, the market does not support SDK minting.
+> ℹ️ **Supported `--token-in` inputs:**
+> - **Any ERC-20 token** is accepted — USDC, USDT, WETH, ARB, WBTC, DAI, and others are routed through a DEX aggregator to the market's underlying asset before minting.
+> - **The market's underlying token** (e.g. weETH for a weETH market) mints directly without an aggregator swap.
+> - **Native ETH (`0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee`) is NOT supported** — the Pendle API does not recognise the native ETH sentinel address. Use WETH instead (`0x82aF49447D8a07e3bd95BD0d56f35241523fBab1` on Arbitrum, `0x4200000000000000000000000000000000000006` on Base).
+>
+> ⚠️ Some markets return HTTP 403 from the Pendle SDK for multi-output minting. Try Arbitrum (chainId 42161) which has the highest coverage. If 403 persists, the market does not support SDK minting.
 
 ```bash
 pendle-plugin --chain <CHAIN_ID> [--dry-run] [--confirm] mint-py \
