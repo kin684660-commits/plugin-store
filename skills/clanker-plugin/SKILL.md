@@ -1,7 +1,7 @@
 ---
 name: clanker-plugin
 description: "Deploy and manage Clanker ERC-20 tokens on Base and Arbitrum. Trigger phrases: deploy token, launch token on Clanker, create token on Base, search Clanker tokens, list latest tokens, claim LP rewards, claim Clanker fees."
-version: "0.2.4"
+version: "0.2.5"
 author: "GeoGu360"
 tags:
   - token-launch
@@ -24,7 +24,7 @@ tags:
 # Check for skill updates (1-hour cache)
 UPDATE_CACHE="$HOME/.plugin-store/update-cache/clanker-plugin"
 CACHE_MAX=3600
-LOCAL_VER="0.2.4"
+LOCAL_VER="0.2.5"
 DO_CHECK=true
 
 if [ -f "$UPDATE_CACHE" ]; then
@@ -97,7 +97,7 @@ case "${OS}_${ARCH}" in
   mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
 esac
 mkdir -p ~/.local/bin
-curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/clanker-plugin@0.2.4/clanker-plugin-${TARGET}${EXT}" -o ~/.local/bin/.clanker-plugin-core${EXT}
+curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/clanker-plugin@0.2.5/clanker-plugin-${TARGET}${EXT}" -o ~/.local/bin/.clanker-plugin-core${EXT}
 chmod +x ~/.local/bin/.clanker-plugin-core${EXT}
 
 # Symlink CLI name to universal launcher
@@ -105,7 +105,7 @@ ln -sf "$LAUNCHER" ~/.local/bin/clanker-plugin
 
 # Register version
 mkdir -p "$HOME/.plugin-store/managed"
-echo "0.2.4" > "$HOME/.plugin-store/managed/clanker-plugin"
+echo "0.2.5" > "$HOME/.plugin-store/managed/clanker-plugin"
 ```
 
 ### Report install (auto-injected, runs once)
@@ -125,7 +125,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   # Report to Vercel stats
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"clanker-plugin","version":"0.2.4"}' >/dev/null 2>&1 || true
+    -d '{"name":"clanker-plugin","version":"0.2.5"}' >/dev/null 2>&1 || true
   # Report to OKX API (with HMAC-signed device token)
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \
@@ -172,6 +172,7 @@ Do NOT use for: buying/selling Clanker tokens (use a DEX skill), non-Clanker tok
 
 | User Intent | Command | Type |
 |-------------|---------|------|
+| I'm new / how do I start? | `quickstart` | Read |
 | List latest tokens | `list-tokens` | Read |
 | Search by creator | `search-tokens --query <address|username>` | Read |
 | Get token details | `token-info --address <addr>` | Read |
@@ -182,130 +183,46 @@ Do NOT use for: buying/selling Clanker tokens (use a DEX skill), non-Clanker tok
 
 ## Proactive Onboarding
 
-When a user signals they are **new or just installed** this plugin — e.g. "I just installed clanker",
-"how do I get started", "what can I do with this", "how do I deploy a token" — **do not wait for them
-to ask specific questions.** Proactively walk them through the Quickstart in order, one step at a time,
-waiting for confirmation before proceeding to the next:
+When a user is new or asks "how do I get started", call `clanker quickstart` first. This checks their actual wallet state and returns a personalised `next_command` and `onboarding_steps`.
 
-1. **Check wallet** — run `onchainos wallet addresses --chain 8453`. If no address, direct them to
-   connect via `onchainos wallet login`. Do not proceed to write operations until a wallet is confirmed.
-2. **Check balance** — run `onchainos wallet balance --chain 8453`. Deploying a token requires ETH for
-   gas (very cheap on Base, typically < $0.05). If insufficient, explain how to bridge ETH to Base.
-3. **Explore read-only** — run `clanker --chain 8453 list-tokens --limit 10` to show recent launches.
-   Ask if they want to search by creator or look up a specific token.
-4. **Preview deployment** — run `clanker --chain 8453 --dry-run deploy-token --name X --symbol Y --from <wallet>`
-   so they see deployment parameters (token admin, reward recipient, LP range) before any on-chain action.
-5. **Execute** — once they confirm, re-run with `--confirm` instead of `--dry-run`.
+```bash
+clanker quickstart
+```
 
-Do not dump all steps at once. Guide conversationally — confirm each step before moving on.
+Parse the JSON output:
+- `status: "active"` → has existing positions/balance; run relevant view command
+- `status: "ready"` → wallet funded; follow `next_command`
+- `status: "needs_gas"` → has tokens but no gas; ask user to send ETH/BNB
+- `status: "needs_funds"` → has gas but no tokens; show `onboarding_steps`
+- `status: "no_funds"` → wallet empty; show `onboarding_steps`
 
-**Key points for new users:**
-- `deploy-token` without `--confirm` and without `--dry-run` returns a safe preview (`ok:true, preview:true`) — use `--dry-run` to see full calldata
-- `--dry-run` is a **global flag** — it must come before the subcommand: `clanker --dry-run deploy-token ...`
-- The deployed token contract address is found in the Basescan tx receipt, not the CLI output
-- `claim-rewards` requires the user to have previously deployed a Clanker token and accrued LP fees
+**Key caveats:**
+- `--dry-run` is a global flag and must come before the subcommand: `clanker --dry-run deploy-token ...`
+- The deployed token contract address is found in the Basescan tx receipt, not the CLI output.
+- `claim-rewards` requires the user to have previously deployed a Clanker token and accrued LP fees.
 
 ---
 
-## Quickstart
-
-New to clanker-plugin? Follow these steps to go from zero to your first token deployment on Base.
-
-### Step 1 — Connect your wallet
+## Quickstart Command
 
 ```bash
-onchainos wallet login your@email.com
-onchainos wallet addresses --chain 8453
+clanker quickstart [--chain <ID>]
 ```
 
-### Step 2 — Check your balance
+Returns a personalised onboarding JSON based on the wallet's actual balances.
 
-```bash
-onchainos wallet balance --chain 8453
-```
+### Output Fields
 
-Minimum recommended: ~0.0005 ETH (~$1) for gas on Base. Token deployments on Base cost well under $0.05
-in gas at normal network conditions. If zero, bridge ETH to Base via a CEX withdrawal or bridge.
-
-### Step 3 — Browse recently deployed tokens
-
-```bash
-clanker --chain 8453 list-tokens --limit 10 --sort desc
-```
-
-Returns the 10 most recently deployed Clanker tokens. Each entry includes `contract_address`, `name`,
-`symbol`, `deployed_at`, and `pool_address`. Use `--sort asc` to see the oldest tokens first.
-Note: `--page` pagination is not functional in this version — all calls return the same page of results.
-
-### Step 4 — Search tokens by creator
-
-```bash
-# By Farcaster username:
-clanker search-tokens --query dwr
-
-# By wallet address:
-clanker search-tokens --query 0xYourWalletAddress
-```
-
-Returns all tokens deployed by that creator, with `trust_status` fields indicating whether the token
-is from a verified/trusted deployer. Use `--trusted-only` to filter to trusted creators only.
-
-### Step 5 — Look up a specific token
-
-```bash
-clanker --chain 8453 token-info --address 0xTokenAddress
-```
-
-Returns token metadata (`tokenName`, `tokenSymbol`, `decimal`) and price data if available. When a
-token has no oracle price yet, `price_available: false` and a `price_note` explain why — this is
-normal for newly deployed tokens.
-
-### Step 6 — Preview a token deployment (safe — no tx sent)
-
-For `deploy-token`, running without any flags returns a safe preview (`ok: true, preview: true`) showing the deployer address and parameters — no transaction is sent. For `claim-rewards`, `--dry-run` is required to preview; running without `--dry-run` or `--confirm` returns an error asking for confirmation.
-
-```bash
-# Preview (safe — no tx sent):
-clanker --chain 8453 --dry-run deploy-token \
-  --name "MyToken" \
-  --symbol "MTK" \
-  --from 0xYourWalletAddress
-```
-
-Expected output: `"dry_run": true`, shows `token_admin`, `reward_recipient`, `factory`, LP range,
-and hook config. Verify your wallet address appears as `token_admin` and `reward_recipient`.
-
-### Step 7 — Deploy your token
-
-```bash
-# Execute (add --confirm; remove --dry-run):
-clanker --chain 8453 deploy-token \
-  --name "MyToken" \
-  --symbol "MTK" \
-  --from 0xYourWalletAddress \
-  --confirm
-```
-
-Expected output: `"ok": true`, `"tx_hash": "0x..."`, `"explorer_url": "https://basescan.org/tx/0x..."`.
-The deployed contract address is NOT in the CLI output — find it in the Basescan tx receipt under
-"Internal Transactions" or the factory event logs. Wait ~30 seconds then run `token-info` to confirm.
-
-### Step 8 — Claim LP rewards (if you have a deployed token)
-
-```bash
-# Preview:
-clanker --chain 8453 --dry-run claim-rewards \
-  --token-address 0xYourDeployedTokenAddress \
-  --from 0xYourWalletAddress
-
-# Execute:
-clanker --chain 8453 claim-rewards \
-  --token-address 0xYourDeployedTokenAddress \
-  --from 0xYourWalletAddress \
-  --confirm
-```
-
-If no rewards have accrued yet, returns `"status": "no_rewards"` — this is normal for new tokens.
+| Field | Description |
+|-------|-------------|
+| `about` | Protocol description |
+| `wallet` | Resolved wallet address |
+| `chain` | Chain name |
+| `assets` | Wallet balances (gas token + key protocol tokens) |
+| `status` | `active` / `ready` / `needs_gas` / `needs_funds` / `no_funds` |
+| `suggestion` | Human-readable state description |
+| `next_command` | The single most useful command to run next |
+| `onboarding_steps` | Ordered steps to follow |
 
 ---
 
