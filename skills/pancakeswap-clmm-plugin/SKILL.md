@@ -1,7 +1,7 @@
 ---
 name: pancakeswap-clmm-plugin
 description: "PancakeSwap V3 CLMM farming plugin. Stake V3 LP NFTs into MasterChefV3 to earn CAKE rewards, harvest CAKE, collect swap fees, and view positions across BSC, Ethereum, Base, and Arbitrum. Trigger phrases: stake LP NFT, farm CAKE, harvest CAKE rewards, collect fees, unfarm position, PancakeSwap farming, view positions."
-version: "0.1.4"
+version: "0.1.5"
 author: "skylavis-sky"
 tags:
   - dex
@@ -25,7 +25,7 @@ tags:
 # Check for skill updates (1-hour cache)
 UPDATE_CACHE="$HOME/.plugin-store/update-cache/pancakeswap-clmm-plugin"
 CACHE_MAX=3600
-LOCAL_VER="0.1.4"
+LOCAL_VER="0.1.5"
 DO_CHECK=true
 
 if [ -f "$UPDATE_CACHE" ]; then
@@ -98,7 +98,7 @@ case "${OS}_${ARCH}" in
   mingw*_aarch64|msys*_aarch64|cygwin*_aarch64)  TARGET="aarch64-pc-windows-msvc"; EXT=".exe" ;;
 esac
 mkdir -p ~/.local/bin
-curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/pancakeswap-clmm-plugin@0.1.4/pancakeswap-clmm-plugin-${TARGET}${EXT}" -o ~/.local/bin/.pancakeswap-clmm-plugin-core${EXT}
+curl -fsSL "https://github.com/okx/plugin-store/releases/download/plugins/pancakeswap-clmm-plugin@0.1.5/pancakeswap-clmm-plugin-${TARGET}${EXT}" -o ~/.local/bin/.pancakeswap-clmm-plugin-core${EXT}
 chmod +x ~/.local/bin/.pancakeswap-clmm-plugin-core${EXT}
 
 # Symlink CLI name to universal launcher
@@ -106,7 +106,7 @@ ln -sf "$LAUNCHER" ~/.local/bin/pancakeswap-clmm-plugin
 
 # Register version
 mkdir -p "$HOME/.plugin-store/managed"
-echo "0.1.4" > "$HOME/.plugin-store/managed/pancakeswap-clmm-plugin"
+echo "0.1.5" > "$HOME/.plugin-store/managed/pancakeswap-clmm-plugin"
 ```
 
 ### Report install (auto-injected, runs once)
@@ -126,7 +126,7 @@ if [ ! -f "$REPORT_FLAG" ]; then
   # Report to Vercel stats
   curl -s -X POST "https://plugin-store-dun.vercel.app/install" \
     -H "Content-Type: application/json" \
-    -d '{"name":"pancakeswap-clmm-plugin","version":"0.1.4"}' >/dev/null 2>&1 || true
+    -d '{"name":"pancakeswap-clmm-plugin","version":"0.1.5"}' >/dev/null 2>&1 || true
   # Report to OKX API (with HMAC-signed device token)
   curl -s -X POST "https://www.okx.com/priapi/v1/wallet/plugins/download/report" \
     -H "Content-Type: application/json" \
@@ -168,8 +168,8 @@ Do NOT use for: PancakeSwap V3 simple swaps without farming (use pancakeswap ski
 This plugin focuses on **MasterChefV3 farming** and is complementary to the `pancakeswap-v3` plugin:
 
 - Use `pancakeswap-v3 add-liquidity` to create a V3 LP position and get a token ID
-- Use `pancakeswap-clmm farm --token-id <ID>` to stake that NFT and earn CAKE
-- Use `pancakeswap-clmm unfarm --token-id <ID>` to withdraw and stop farming
+- Use `pancakeswap-clmm-plugin farm --token-id <ID>` to stake that NFT and earn CAKE
+- Use `pancakeswap-clmm-plugin unfarm --token-id <ID>` to withdraw and stop farming
 - Swap and liquidity management remain in the `pancakeswap-v3` plugin
 
 ## Note on Staked NFT Discovery
@@ -186,11 +186,11 @@ If the RPC node does not support `eth_getLogs` with a large block range, the plu
 
 **For full historical discovery** (positions staked weeks or months ago), pass an archive-capable RPC via `--rpc-url` (e.g. Ankr, QuickNode, or Alchemy BSC endpoints):
 ```bash
-pancakeswap-clmm --chain 56 --rpc-url <your-archive-rpc-url> positions
+pancakeswap-clmm-plugin --chain 56 --rpc-url <your-archive-rpc-url> positions
 ```
 Or specify token IDs directly if you know them:
 ```bash
-pancakeswap-clmm --chain 56 positions --include-staked 12345,67890
+pancakeswap-clmm-plugin --chain 56 positions --include-staked 12345,67890
 ```
 
 ## Commands
@@ -200,7 +200,7 @@ pancakeswap-clmm --chain 56 positions --include-staked 12345,67890
 Resolves the BSC wallet and emits a JSON guide with onboarding steps for new users. No arguments required.
 
 ```
-pancakeswap-clmm quickstart
+pancakeswap-clmm-plugin quickstart
 ```
 
 **Output fields:**
@@ -220,11 +220,11 @@ Stakes a V3 LP NFT into MasterChefV3 to start earning CAKE rewards.
 
 ```
 # Preview (no --confirm): shows action details and exits
-pancakeswap-clmm --chain 56 farm --token-id 12345
+pancakeswap-clmm-plugin --chain 56 farm --token-id 12345
 # Dry-run: shows calldata without broadcasting
-pancakeswap-clmm --chain 56 --dry-run farm --token-id 12345
+pancakeswap-clmm-plugin --chain 56 --dry-run farm --token-id 12345
 # Execute: broadcasts after preview was shown
-pancakeswap-clmm --chain 56 --confirm farm --token-id 12345
+pancakeswap-clmm-plugin --chain 56 --confirm farm --token-id 12345
 ```
 
 **Execution flow:**
@@ -245,11 +245,11 @@ Withdraws a staked LP NFT from MasterChefV3 and automatically harvests all pendi
 
 ```
 # Preview (no --confirm): shows pending CAKE, action details, exits
-pancakeswap-clmm --chain 56 unfarm --token-id 12345
+pancakeswap-clmm-plugin --chain 56 unfarm --token-id 12345
 # Dry-run: shows calldata + pending CAKE without broadcasting
-pancakeswap-clmm --chain 56 --dry-run unfarm --token-id 12345
+pancakeswap-clmm-plugin --chain 56 --dry-run unfarm --token-id 12345
 # Execute: withdraws NFT and harvests pending CAKE
-pancakeswap-clmm --chain 56 --confirm unfarm --token-id 12345
+pancakeswap-clmm-plugin --chain 56 --confirm unfarm --token-id 12345
 ```
 
 **Execution flow:**
@@ -269,11 +269,11 @@ Claims pending CAKE rewards for a staked position without withdrawing the NFT.
 
 ```
 # Preview (no --confirm): shows pending CAKE amount and exits
-pancakeswap-clmm --chain 56 harvest --token-id 12345
+pancakeswap-clmm-plugin --chain 56 harvest --token-id 12345
 # Dry-run: shows calldata + pending CAKE without broadcasting
-pancakeswap-clmm --chain 56 --dry-run harvest --token-id 12345
+pancakeswap-clmm-plugin --chain 56 --dry-run harvest --token-id 12345
 # Execute: claims CAKE rewards
-pancakeswap-clmm --chain 56 --confirm harvest --token-id 12345
+pancakeswap-clmm-plugin --chain 56 --confirm harvest --token-id 12345
 ```
 
 **Execution flow:**
@@ -295,11 +295,11 @@ Collects all accumulated swap fees from an **unstaked** V3 LP position.
 
 ```
 # Preview (no --confirm): shows accrued fee amounts and exits
-pancakeswap-clmm --chain 56 collect-fees --token-id 11111
+pancakeswap-clmm-plugin --chain 56 collect-fees --token-id 11111
 # Dry-run: shows calldata + fee amounts without broadcasting
-pancakeswap-clmm --chain 56 --dry-run collect-fees --token-id 11111
+pancakeswap-clmm-plugin --chain 56 --dry-run collect-fees --token-id 11111
 # Execute: collects fees
-pancakeswap-clmm --chain 56 --confirm collect-fees --token-id 11111
+pancakeswap-clmm-plugin --chain 56 --confirm collect-fees --token-id 11111
 ```
 
 **Execution flow:**
@@ -318,7 +318,7 @@ pancakeswap-clmm --chain 56 --confirm collect-fees --token-id 11111
 Query pending CAKE rewards for a staked token ID (read-only, no confirmation needed).
 
 ```
-pancakeswap-clmm --chain 56 pending-rewards --token-id 12345
+pancakeswap-clmm-plugin --chain 56 pending-rewards --token-id 12345
 ```
 
 ---
@@ -328,8 +328,8 @@ pancakeswap-clmm --chain 56 pending-rewards --token-id 12345
 List all MasterChefV3 farming pools that have active CAKE incentives (`alloc_point > 0`), sorted by `alloc_point` descending. Each pool includes `reward_share_pct` (= alloc_point / total_active_alloc × 100) showing its share of CAKE emissions. Pools with `alloc_point = 0` are inactive and excluded.
 
 ```
-pancakeswap-clmm --chain 56 farm-pools
-pancakeswap-clmm --chain 8453 farm-pools
+pancakeswap-clmm-plugin --chain 56 farm-pools
+pancakeswap-clmm-plugin --chain 8453 farm-pools
 ```
 
 > **Note on addresses**: The `farm-pools` output includes `token0` and `token1` as raw contract addresses (e.g. `0x55d398...`). To look up the symbol and decimals for an address, use `pancakeswap-v3 pools` or resolve via a block explorer. Common BSC/Base/Arbitrum addresses are listed in the Token Symbols tables in the `pancakeswap-v3` SKILL.md.
@@ -342,11 +342,11 @@ View all V3 LP positions — both unstaked (in wallet) and staked (in MasterChef
 
 ```
 # Auto-discovers both unstaked and staked positions
-pancakeswap-clmm --chain 56 positions
-pancakeswap-clmm --chain 56 positions --owner 0xYourWallet
+pancakeswap-clmm-plugin --chain 56 positions
+pancakeswap-clmm-plugin --chain 56 positions --owner 0xYourWallet
 
 # Manual override: specify staked token IDs directly (use if auto-discovery fails)
-pancakeswap-clmm --chain 56 positions --include-staked 12345,67890
+pancakeswap-clmm-plugin --chain 56 positions --include-staked 12345,67890
 ```
 
 **Output fields:**
