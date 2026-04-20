@@ -4,7 +4,7 @@ Liquid restake ETH on Ethereum to receive eETH — earning staking rewards and E
 
 **Prerequisites**
 - onchainos agentic wallet connected
-- Ethereum mainnet wallet (chain 1) with at least 0.001 ETH
+- Some ETH on Ethereum mainnet
 
 **How it Works**
 1. **Check your positions and APY**: See current eETH/weETH balances and the live staking rate before committing. `etherfi-plugin positions`
