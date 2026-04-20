@@ -3,7 +3,7 @@
 Swap tokens on Raydium — Solana's largest AMM — with live quotes, multi-mint price checks, pool browsing, and a preview-before-execute flow using your onchainos wallet.
 
 **Prerequisites**
-- onchainos agentic wallet connected with a Solana wallet (chain 501)
+- onchainos agentic wallet connected
 - At least 0.01 SOL in your wallet for gas plus the swap amount
 
 **How it Works**
