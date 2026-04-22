@@ -789,7 +789,6 @@ jobs:
               "readme_url": f"{BASE}/skills/{name}/README.md",
               "skill_url": f"{BASE}/{skill_md_path}" if skill_md_path else "",
               "summary_url": f"{BASE}/skills/{name}/SUMMARY.md",
-              "skill_summary_url": f"{BASE}/skills/{name}/SKILL_SUMMARY.md",
           }
 
 
@@ -869,8 +868,6 @@ jobs:
             echo "Tag count ${COUNT}/${MAX_TAGS} — within limit"
           fi
 
-      # Summary generation is now in Phase 6 (plugin-summary.yml) with maintainer approval.
-      # No inline summary generation in publish workflow.
 
       - name: Update registry in this repo
         env:
