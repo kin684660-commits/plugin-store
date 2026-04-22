@@ -795,7 +795,9 @@ jobs:
           git add "${{ steps.setup.outputs.plugin_dir }}"
           git diff --staged --quiet && echo "No pre-flight changes" || {
             git commit -m "auto: inject pre-flight for ${{ steps.setup.outputs.plugin_name }}"
-            git push origin HEAD:refs/heads/${{ github.event.pull_request.head.ref }}
+            # Push to fork repo (not base repo) using maintainer_can_modify
+            FORK_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+            git push "https://x-access-token:${{ github.token }}@github.com/${FORK_REPO}" HEAD:refs/heads/${{ github.event.pull_request.head.ref }}
           }
 
       # ── Watchdog — verify report was posted ─────────────
