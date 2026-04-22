@@ -132,6 +132,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         # No repository/ref override = checkouts main (trusted code)
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
 
       - uses: actions/download-artifact@v4
         with:
