@@ -3,8 +3,15 @@
 ## Overview
 Cross-analyze Polymarket prediction odds with Hyperliquid funding rates and OKX smart-money signals to surface convergence and divergence opportunities.
 
+## Quick Start
+1. Install the OKX OnchainOS CLI:
+npx skills add okx/onchainos-skills
+2. Install this skill:
+npx skills add okx/plugin-store --skill polymarketsignalbridge
+3. Ask your agent: "Scan for Polymarket and Hyperliquid convergence signals today"
+
 ## Prerequisites
-- OKX OnchainOS CLI installed (`npx skills add okx/onchainos-skills`)
+- OKX OnchainOS CLI installed
 - Internet access to Polymarket and Hyperliquid public APIs
 - No API keys or private keys required
 
